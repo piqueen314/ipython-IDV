@@ -12,6 +12,8 @@
 
 import sys;
 import os;
+import os.path;
+import re;
 import subprocess;
 import urllib.request;
 import urllib.parse;
@@ -26,14 +28,14 @@ idvDebug = 0;
 
 #How we talk to the running IDV
 #The port is defined by the idv.monitorport = 8080 in the .unidata/idv/DefaultIdv/idv.properties
-idvBaseUrl = "http://localhost:8080";
+idvBaseUrl = "http://localhost:8765";
 
 #These correspond to the commands in ucar.unidata.idv.IdvMonitor
 cmd_ping = "/ping";
 cmd_loadisl = "/loadisl";
 
 
-ramaddaHost = None;
+ramaddaBase = None;
 ramaddaEntry = None;
 
 #The global bounding box
@@ -94,11 +96,14 @@ def idvPing():
 def idvHelp(line, cell=None):
     print("runIdv");
     print("loadBundle <bundle url or file path>");
+    print("           If no bundle given and if setRamadda has been called the bundle will be fetched from RAMADDA");
     print("loadBundleMakeImage <bundle url or file path>");
     print("makeImage");
     print("makeMovie");
-    print("setRamadda <ramadda url>");
+    print("setRamadda <ramadda url to a Drilsdown case study>");
     print("setBBOX <north west south east> No arguments to clear the bbox");
+    print("idvSave <xidv or zidv filename> - write out the bundle");
+
 
 
 def loadBundleMakeImage(line, cell=None):
@@ -107,6 +112,12 @@ def loadBundleMakeImage(line, cell=None):
 
 def loadBundle(line, cell=None):
     global bbox;
+    global ramaddaBase;
+    global ramaddaEntryId;
+    if line == None or line == "":
+        if ramaddaHost is not None:
+            line = ramaddaBase +"/drilsdown/getbundle?entryid=" + ramaddaEntryId;
+
     if line == None or line == "":
         print ("No bundle argument provided");
         return;
@@ -150,14 +161,32 @@ def makeMovie(line, cell=None):
         img = '<img src="data:image/gif;base64,{0}">';
         return HTML(img.format(data));
 
+##The arg should be the normal /entry/view URL for a RAMADDA entry
 def setRamadda(line, cell=None):
-    global ramaddaHost;
+    global ramaddaBase;
     global ramaddaEntryId;
     toks = urllib.parse.urlparse(line);
-    ramaddaHost = toks.netloc;
-    toks = urllib.parse.parse_qs(toks.query);
-    ramaddaEntryId = toks["entryid"][0];
-    print("Current ramadda:" + ramaddaHost + " entry:" + ramaddaEntryId);
+    ramaddaBase = toks.scheme +"://" + toks.netloc;
+    path = re.sub("/entry.*","", toks.path);
+    ramaddaBase += path;
+    args = urllib.parse.parse_qs(toks.query);
+    ramaddaEntryId = args["entryid"][0];
+    print("Current ramadda:" + ramaddaBase  + " entry:" + ramaddaEntryId);
+
+
+def idvSave(line, cell=None):
+    filename = "idv.xidv";
+    if line != "" and line is not None:
+        filename = line;
+    isl = '<isl><save file="' + filename +'"/></isl>';
+    if idvCall(cmd_loadisl, {"isl": isl}) == None:
+        print("save failed");
+        return;
+    if os.path.isfile(filename):
+        print ("bundle saved");
+        return FileLink(filename)
+    print ("bundle not saved");
+
 
 def setBBOX(line, cell=None):
     global bbox;
@@ -186,6 +215,7 @@ def load_ipython_extension(shell):
     shell.register_magic_function(makeMovie, magicType);
     shell.register_magic_function(setRamadda, magicType);
     shell.register_magic_function(setBBOX, magicType);
+    shell.register_magic_function(idvSave, magicType);
 
 
 
