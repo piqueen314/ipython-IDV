@@ -15,14 +15,18 @@ import os;
 import os.path;
 import re;
 import subprocess;
-import urllib.request;
-import urllib.parse;
 from base64 import b64encode;
 from IPython.display import HTML;
 from IPython.display import Image;
 from tempfile import NamedTemporaryFile;
 from IPython.display import FileLink;
 import time;
+try:
+    from urllib.request import urlopen
+    from urllib.parse import urlparse, urlencode
+except ImportError:
+    from urlparse import urlparse
+    from urllib import urlopen, urlencode
 
 idvDebug = 0;
 
@@ -72,10 +76,10 @@ def idvCall(command, args=None):
     try:
         url = idvBaseUrl +command;
         if args:
-            url += "?" + urllib.parse.urlencode(args);
+            url += "?" + urlencode(args);
         if idvDebug:
             print("Calling " + url);
-        html  = urllib.request.urlopen(url).read();
+        html  = urlopen(url).read();
         return html;
     except:
         return None;
@@ -84,7 +88,7 @@ def idvCall(command, args=None):
 def idvPing():
 #NOTE: Don't call idvCall here because idvCall calls runIdv which calls ping
     try:
-        return  urllib.request.urlopen(idvBaseUrl +cmd_ping).read();
+        return  urlopen(idvBaseUrl +cmd_ping).read();
     except:
         return None;
 
@@ -165,11 +169,11 @@ def makeMovie(line, cell=None):
 def setRamadda(line, cell=None):
     global ramaddaBase;
     global ramaddaEntryId;
-    toks = urllib.parse.urlparse(line);
+    toks = urlparse(line);
     ramaddaBase = toks.scheme +"://" + toks.netloc;
     path = re.sub("/entry.*","", toks.path);
     ramaddaBase += path;
-    args = urllib.parse.parse_qs(toks.query);
+    args = urlparse.parse_qs(toks.query);
     ramaddaEntryId = args["entryid"][0];
     print("Current ramadda:" + ramaddaBase  + " entry:" + ramaddaEntryId);
 
