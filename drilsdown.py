@@ -49,6 +49,7 @@ def runIdv(line = None, cell=None):
 #Check if the IDV is running
     idvRunning = idvPing();
     if  idvRunning:
+        print ("IDV is already running");
         return;
 #Check if the env is defined
     if "IDV_HOME" not in os.environ:
@@ -119,7 +120,7 @@ def loadBundle(line, cell=None):
     global ramaddaBase;
     global ramaddaEntryId;
     if line == None or line == "":
-        if ramaddaHost is not None:
+        if ramaddaBase is not None:
             line = ramaddaBase +"/drilsdown/getbundle?entryid=" + ramaddaEntryId;
 
     if line == None or line == "":
