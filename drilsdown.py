@@ -21,6 +21,7 @@ from IPython.display import Image;
 from tempfile import NamedTemporaryFile;
 from IPython.display import FileLink;
 import time;
+
 try:
     from urllib.request import urlopen
     from urllib.parse import urlparse, urlencode
@@ -123,6 +124,7 @@ def createCaseStudy(line, cell=None):
         print("You need to call setRamadda first");
         return;
     url = ramaddaBase +"/entry/form?parentof=" + ramaddaEntryId +"&type=type_drilsdown_casestudy&name=" + line;
+    url = url.replace(" ","%20");
     print ("Go to this link to create the Case Study:");
     print (url);
     print("Then call %setRamadda with the new Case Study URL");
@@ -240,3 +242,4 @@ def load_ipython_extension(shell):
 
 
 print("Drilsdown extension loaded");
+print("Do: %idvHelp to see Drilsdown commands");
