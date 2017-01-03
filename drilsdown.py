@@ -106,6 +106,7 @@ def idvHelp(line, cell=None):
     print("makeImage");
     print("makeMovie");
     print("setRamadda <ramadda url to a Drilsdown case study>");
+    print("createCaseStudy <case study name>");
     print("setBBOX <north west south east> No arguments to clear the bbox");
     print("idvSave <xidv or zidv filename> - write out the bundle");
 
@@ -114,6 +115,18 @@ def idvHelp(line, cell=None):
 def loadBundleMakeImage(line, cell=None):
     loadBundle(line,cell);
     return makeImage(line,cell);
+
+def createCaseStudy(line, cell=None):
+    global ramaddaBase;
+    global ramaddaEntryId;
+    if ramaddaBase == None or ramaddaBase == "":
+        print("You need to call setRamadda first");
+        return;
+    url = ramaddaBase +"/entry/form?parentof=" + ramaddaEntryId +"&type=type_drilsdown_casestudy&name=" + line;
+    print ("Go to this link to create the Case Study:");
+    print (url);
+    print("Then call %setRamadda with the new Case Study URL");
+
 
 def loadBundle(line, cell=None):
     global bbox;
@@ -174,8 +187,7 @@ def setRamadda(line, cell=None):
     ramaddaBase = toks.scheme +"://" + toks.netloc;
     path = re.sub("/entry.*","", toks.path);
     ramaddaBase += path;
-    args = urlparse.parse_qs(toks.query);
-    ramaddaEntryId = args["entryid"][0];
+    ramaddaEntryId = re.search("entryid=([^&]+)", toks.query).group(1);
     print("Current ramadda:" + ramaddaBase  + " entry:" + ramaddaEntryId);
 
 
@@ -219,6 +231,7 @@ def load_ipython_extension(shell):
     shell.register_magic_function(makeImage, magicType);
     shell.register_magic_function(makeMovie, magicType);
     shell.register_magic_function(setRamadda, magicType);
+    shell.register_magic_function(createCaseStudy, magicType);
     shell.register_magic_function(setBBOX, magicType);
     shell.register_magic_function(idvSave, magicType);
 
@@ -226,3 +239,4 @@ def load_ipython_extension(shell):
 
 
 
+print("Drilsdown extension loaded");
