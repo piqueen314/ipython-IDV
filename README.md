@@ -14,3 +14,10 @@ In the notebook do:
 This requires that you have an [IDV version 5.3u1](http://www.unidata.ucar.edu/software/idv/nightly/) or above and set IDV_HOME environment variable to the IDV install directory. The python will run:
 ${IDV_HOME}/runIDV
 
+
+The drilsdownplugin.jar is a RAMADDA plugin that provides Drisldown Case Study functionality. 
+It is produced from the [RAMADDA drilsdown report](https://github.com/Unidata/drilsdown) but
+is included here so all of the products that are required for running drilsdown can be found in 
+one place.
+
+
