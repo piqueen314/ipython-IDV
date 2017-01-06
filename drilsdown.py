@@ -21,6 +21,9 @@ from IPython.display import Image;
 from tempfile import NamedTemporaryFile;
 from IPython.display import FileLink;
 import time;
+from IPython import get_ipython
+
+
 
 try:
     from urllib.request import urlopen
@@ -50,7 +53,6 @@ def runIdv(line = None, cell=None):
 #Check if the IDV is running
     idvRunning = idvPing();
     if  idvRunning:
-        print ("IDV is already running");
         return;
 #Check if the env is defined
     if "IDV_HOME" not in os.environ:
@@ -60,13 +62,14 @@ def runIdv(line = None, cell=None):
     print ("Starting IDV: " + path);
     subprocess.Popen([path]) 
     #Give the IDV a chance to get going
-    for x in range(0, 30):
+    for x in range(0, 60):
         if idvPing() != None:
             print("IDV started");
-            break;
+            return;
         if x % 5 == 0:
             print ("Waiting on the IDV");
         time.sleep(1);
+    print ("IDV failed to start (or is slow in starting)");
 
 #
 #Will start up the IDV if needed then call the command
@@ -82,7 +85,7 @@ def idvCall(command, args=None):
         if idvDebug:
             print("Calling " + url);
         html  = urlopen(url).read();
-        return html;
+        return html.decode("utf-8");
     except:
         return None;
 
@@ -104,12 +107,16 @@ def idvHelp(line, cell=None):
     print("loadBundle <bundle url or file path>");
     print("           If no bundle given and if setRamadda has been called the bundle will be fetched from RAMADDA");
     print("loadBundleMakeImage <bundle url or file path>");
-    print("makeImage");
-    print("makeMovie");
+    print("makeImage <-publish> Capture an IDV image and optionally publish it to RAMADDA");
+    print("makeMovie <-publish> Capture an IDV movie and optionally publish it to RAMADDA");
+    print("saveBundle <xidv or zidv filename> - write out the bundle");
+    print("publishBundle  <xidv or zidv filename> - write out the bundle and publish it to RAMADDA");
+    print("publishNotebook <notebook file name> - publish the current notebook to RAMADDA via the IDV");
     print("setRamadda <ramadda url to a Drilsdown case study>");
     print("createCaseStudy <case study name>");
     print("setBBOX <north west south east> No arguments to clear the bbox");
-    print("idvSave <xidv or zidv filename> - write out the bundle");
+
+
 
 
 
@@ -161,21 +168,58 @@ def loadBundle(line, cell=None):
 
 
 def makeImage(line, cell=None):
+    extra = "";
+    if line == "-publish":
+        extra = " publish=\"true\" ";
+
     with NamedTemporaryFile(suffix='.png') as f:
-        isl = '<isl><image combine="true" file="' + f.name +'"><matte space="5"/></image></isl>';
-        if idvCall(cmd_loadisl, {"isl": isl}) == None:
+        isl = '<isl><image combine="true" file="' + f.name +'"' + extra +'><matte space="5"/></image></isl>';
+        result = idvCall(cmd_loadisl, {"isl": isl});
+        if result == None:
             print("makeImage failed");
             return;
+        if line == "-publish":
+            print("Publication successful");
+            print("URL: " + result);
         return Image(filename=f.name);
 
 
+def publishNotebook(line, cell=None):
+    filename = "notebook.ipynb";
+    if line != "" and line is not None:
+        filename = line;
+    ipython = get_ipython();
+    ipython.magic("notebook -e " + filename);
+    file = os.getcwd() + "/" + filename;
+    isl = '<isl><publish file="'  + file +'"/></isl>';
+    print("Check your IDV to publish the file");
+    result  = idvCall(cmd_loadisl, {"isl": isl});
+    if result  == None:
+        print("publish failed");
+        return;
+    if result != "" and result is not None:
+        print("Publication successful");
+        print("URL: " + result);
+        return
+    print("Publication failed");
+
+
 def makeMovie(line, cell=None):
+    extra = "";
+    if line == "-publish":
+        extra = " publish=\"true\" ";
+
     data ="";
     with NamedTemporaryFile(suffix='.gif') as f:
-        isl = '<isl><movie file="' + f.name +'"/></isl>';
-        if idvCall(cmd_loadisl, {"isl": isl}) == None:
+        isl = '<isl><movie file="' + f.name + '"' + extra +'/></isl>';
+        result  = idvCall(cmd_loadisl, {"isl": isl});
+        if result == None:
             print("makeMovie failed");
             return;
+        if result != "" and result is not None:
+            print("Publication successful");
+            print("URL: " + result);
+
         data = open(f.name, "rb").read()
         data = b64encode(data).decode('ascii');
         img = '<img src="data:image/gif;base64,{0}">';
@@ -193,14 +237,36 @@ def setRamadda(line, cell=None):
     print("Current ramadda:" + ramaddaBase  + " entry:" + ramaddaEntryId);
 
 
-def idvSave(line, cell=None):
+def saveBundle(line, cell=None):
+    extra = "";
     filename = "idv.xidv";
     if line != "" and line is not None:
         filename = line;
-    isl = '<isl><save file="' + filename +'"/></isl>';
-    if idvCall(cmd_loadisl, {"isl": isl}) == None:
+    isl = '<isl><save file="' + filename +'"' + extra +'/></isl>';
+    result = idvCall(cmd_loadisl, {"isl": isl});
+    if result == None:
         print("save failed");
         return;
+    if os.path.isfile(filename):
+        print ("bundle saved");
+        return FileLink(filename)
+    print ("bundle not saved");
+
+
+def publishBundle(line, cell=None):
+    extra = " publish=\"true\" ";
+    filename = "idv.xidv";
+    if line != "" and line is not None:
+        filename = line;
+    isl = '<isl><save file="' + filename +'"' + extra +'/></isl>';
+    result = idvCall(cmd_loadisl, {"isl": isl});
+    if result == None:
+        print("save failed");
+        return;
+    if result != "" and result is not None:
+        print("Publication successful");
+        print("URL: " + result);
+
     if os.path.isfile(filename):
         print ("bundle saved");
         return FileLink(filename)
@@ -235,7 +301,9 @@ def load_ipython_extension(shell):
     shell.register_magic_function(setRamadda, magicType);
     shell.register_magic_function(createCaseStudy, magicType);
     shell.register_magic_function(setBBOX, magicType);
-    shell.register_magic_function(idvSave, magicType);
+    shell.register_magic_function(saveBundle, magicType);
+    shell.register_magic_function(publishBundle, magicType);
+    shell.register_magic_function(publishNotebook, magicType);
 
 
 
