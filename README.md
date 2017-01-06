@@ -16,7 +16,7 @@ ${IDV_HOME}/runIDV
 
 
 The drilsdownplugin.jar is a RAMADDA plugin that provides Drisldown Case Study functionality. 
-It is produced from the [RAMADDA drilsdown report](https://github.com/Unidata/drilsdown) but
+It is produced from the [RAMADDA drilsdown repository](https://github.com/Unidata/drilsdown) but
 is included here so all of the products that are required for running drilsdown can be found in 
 one place.
 
