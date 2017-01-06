@@ -36,7 +36,7 @@ idvDebug = 0;
 
 #How we talk to the running IDV
 #The port is defined by the idv.monitorport = 8080 in the .unidata/idv/DefaultIdv/idv.properties
-idvBaseUrl = "http://localhost:8765";
+idvBaseUrl = "http://127.0.0.1:8765";
 
 #These correspond to the commands in ucar.unidata.idv.IdvMonitor
 cmd_ping = "/ping";
