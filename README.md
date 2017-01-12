@@ -4,10 +4,12 @@ Extension for IPython Notebooks to provide line and cell magics to call out to U
 
 Part of the [DRILSDOWN project](https://github.com/Unidata/drilsdown)
 
-Copy to drilsdown.py extension to your local extensions directory -
+To set this up:
+
+Copy the [drilsdown.py](https://github.com/Unidata/ipython-IDV/blob/master/drilsdown.py) extension to your local extensions directory -
 ~/ipython/extensions
 
-In the notebook do:
+When you run the iPyhton notebook do:
 %load_ext drilsdown
 %idvHelp
 
@@ -15,11 +17,10 @@ This requires that you have an [IDV version 5.3u1](http://www.unidata.ucar.edu/s
 ${IDV_HOME}/runIDV
 
 
-The drilsdownplugin.jar is a RAMADDA plugin that provides Drisldown Case Study functionality. 
-It is produced from the [RAMADDA drilsdown repository](https://github.com/Unidata/drilsdown) but
-is included here so all of the products that are required for running drilsdown can be found in 
+The [ramaddaplugin.jar](https://github.com/Unidata/ipython-IDV/blob/master/ramaddaplugin.jar) is an IDV plugin that provides publication services to RAMADDA. Copy this file to your local IDV plugins directory (~/.unidata/idv/DefaultIdv/plugins). It is included here so all of the products that are required for running drilsdown can be found in 
 one place.
 
-The ramaddaplugin.jar is an IDV plugin that provides publication services to RAMADDA. Likewise, it
-is included here so all of the products that are required for running drilsdown can be found in 
-one place.
+The [drilsdownplugin.jar](https://github.com/Unidata/ipython-IDV/blob/master/drilsdownplugin.jar)  is a RAMADDA plugin that provides Drisldown Case Study functionality. It is produced from the [RAMADDA drilsdown repository](https://github.com/Unidata/drilsdown) but is included here so all of the products that are required for running drilsdown can be found in one place. Copy this plugin to your RAMADDA plugins directory.
+
+
+
