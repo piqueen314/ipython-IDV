@@ -107,6 +107,7 @@ def idvHelp(line, cell=None):
     print("loadBundle <bundle url or file path>");
     print("           If no bundle given and if setRamadda has been called the bundle will be fetched from RAMADDA");
     print("loadBundleMakeImage <bundle url or file path>");
+    print("loadCatalog Load the case study catalog into the IDV");
     print("makeImage <-publish> Capture an IDV image and optionally publish it to RAMADDA");
     print("makeMovie <-publish> Capture an IDV movie and optionally publish it to RAMADDA");
     print("saveBundle <xidv or zidv filename> - write out the bundle");
@@ -117,6 +118,20 @@ def idvHelp(line, cell=None):
     print("setBBOX <north west south east> No arguments to clear the bbox");
 
 
+
+
+def loadCatalog(line, cell=None):
+    global ramaddaEntryId;
+    if ramaddaBase == None or ramaddaBase == "":
+        print("You need to call setRamadda first");
+        return;
+    url = ramaddaBase +"/entry/show?parentof=" + ramaddaEntryId +"&amp;output=thredds.catalog";
+    isl = '<isl>\n<loadcatalog url="' + url+'"/></isl>';
+    if idvCall(cmd_loadisl, {"isl": isl}) == None:
+        print("loadCatalog failed");
+        return;
+    print("Catalog loaded");
+    print("Check your IDV");
 
 
 
@@ -296,6 +311,7 @@ def load_ipython_extension(shell):
     shell.register_magic_function(runIdv, magicType);
     shell.register_magic_function(loadBundle, magicType);
     shell.register_magic_function(loadBundleMakeImage, magicType);
+    shell.register_magic_function(loadCatalog, magicType);
     shell.register_magic_function(makeImage, magicType);
     shell.register_magic_function(makeMovie, magicType);
     shell.register_magic_function(setRamadda, magicType);
