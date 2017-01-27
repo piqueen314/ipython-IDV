@@ -18,10 +18,16 @@ import subprocess;
 from base64 import b64encode;
 from IPython.display import HTML;
 from IPython.display import Image;
+from IPython.display import display;
 from tempfile import NamedTemporaryFile;
 from IPython.display import FileLink;
 import time;
-from IPython import get_ipython
+from IPython import get_ipython;
+
+from ipywidgets import *;
+import ipywidgets as widgets;
+
+
 
 
 
@@ -97,6 +103,39 @@ def idvPing():
     except:
         return None;
 
+def readUrl(url):
+    return urlopen(url).read().decode("utf-8");
+
+
+def makeButton(label, callback):
+    b = widgets.Button(
+        description=label,
+        disabled=False,
+        button_style='', # 'success', 'info', 'warning', 'danger' or ''
+        tooltip=label,
+        )
+    b.on_click(callback);
+    return b;
+
+
+def makeUI(line):
+    display(makeButton("Run IDV",runIDVClicked));
+    display(makeButton("Make Image",makeImageClicked));
+
+def runIDVClicked(b):
+    runIdv("");
+
+def makeImageClicked(b):
+    display(makeImage(""));
+
+def loadBundleClicked(b):
+    loadBundle(b.url);
+
+def listRamaddaClicked(b):
+    display(HTML("<hr>"));
+    listRamadda(b.entryid);
+
+
 
 ##
 ## Here are the magic commands
@@ -113,7 +152,7 @@ def idvHelp(line, cell=None):
     print("saveBundle <xidv or zidv filename> - write out the bundle");
     print("publishBundle  <xidv or zidv filename> - write out the bundle and publish it to RAMADDA");
     print("publishNotebook <notebook file name> - publish the current notebook to RAMADDA via the IDV");
-    print("setRamadda <ramadda url to a Drilsdown case study>");
+    print("setRamadda <ramadda url to a Drilsdown case study (or setCaseStudy)>");
     print("createCaseStudy <case study name>");
     print("setBBOX <north west south east> No arguments to clear the bbox");
 
@@ -196,7 +235,10 @@ def makeImage(line, cell=None):
         if line == "-publish":
             print("Publication successful");
             print("URL: " + result);
-        return Image(filename=f.name);
+        data = open(f.name, "rb").read()
+        data = b64encode(data).decode('ascii');
+        img = '<img src="data:image/gif;base64,{0}">';
+        return HTML(img.format(data));
 
 
 def publishNotebook(line, cell=None):
@@ -240,23 +282,74 @@ def makeMovie(line, cell=None):
         img = '<img src="data:image/gif;base64,{0}">';
         return HTML(img.format(data));
 
+def setCaseStudy(line, cell=None):
+    return setRamadda(line, cell);
+
 ##The arg should be the normal /entry/view URL for a RAMADDA entry
 def setRamadda(line, cell=None):
+    toks = urlparse(line);
     global ramaddaBase;
     global ramaddaEntryId;
-    toks = urlparse(line);
+    global ramaddaHost;
+
+    ramaddaHost = toks.scheme +"://" + toks.netloc;
     ramaddaBase = toks.scheme +"://" + toks.netloc;
     path = re.sub("/entry.*","", toks.path);
     ramaddaBase += path;
     ramaddaEntryId = re.search("entryid=([^&]+)", toks.query).group(1);
-    print("Current ramadda:" + ramaddaBase  + " entry:" + ramaddaEntryId);
+    baseName =  readUrl(ramaddaBase+"/entry/show?output=entry.csv&fields=name&entryid=" + ramaddaEntryId).split("\n")[1];
+    display(HTML("Current ramadda: <a target=ramadda href=" + line +">" + baseName+"</a><br>"));
+    listRamadda(ramaddaEntryId);
+
+
+
+#
+#List the entries held by the entry id
+#
+def listRamadda(entryId):
+    global ramaddaBase;
+    global ramaddaHost;
+    csv = readUrl(ramaddaBase+"/entry/show?entryid=" + entryId +"&output=default.csv&fields=name,id,type,icon");
+    lines =  csv.split("\n");
+    html = "";
+    cnt = 0;
+    for i in range(len(lines)):
+        if i > 0:
+            line2 =  lines[i].split(",");
+            if len(line2)==4 :
+                cnt = cnt+1;
+                name = line2[0];
+                id = line2[1];
+                type = line2[2];
+                icon = line2[3];
+                if type == "type_idv_bundle":
+                    b  = makeButton("Load bundle",loadBundleClicked);
+                    b.url  = ramaddaBase +"/entry/get?entryid=" + id;
+                    box = HBox([b, Label(name)])
+                    display(box);
+                elif type=="type_drilsdown_casestudy" or type=="group":
+                    b  = makeButton("List",listRamaddaClicked);
+                    b.entryid = id;
+                    box = HBox([b, Label(name)])
+                    display(box);
+                else:
+                    html+= "<img src=" + ramaddaHost + icon+"> " + '<a target=ramadda href=' + ramaddaBase +"/entry/show?entryid=" + id +">" + name +"</a><br>";                
+    if cnt == 0:
+        html = "<b>No entries found</b>";
+    display(HTML(html));                
 
 
 def saveBundle(line, cell=None):
     extra = "";
     filename = "idv.xidv";
-    if line != "" and line is not None:
-        filename = line;
+
+    toks = line.split(" ");
+    for i in range(len(toks)):
+        tok  = toks[i];
+        if tok == "-publish":
+            extra +=' publish="true" '
+        else:
+            filename = tok;
     isl = '<isl><save file="' + filename +'"' + extra +'/></isl>';
     result = idvCall(cmd_loadisl, {"isl": isl});
     if result == None:
@@ -309,12 +402,14 @@ def load_ipython_extension(shell):
     magicType = "line";
     shell.register_magic_function(idvHelp, magicType);
     shell.register_magic_function(runIdv, magicType);
+    shell.register_magic_function(makeUI, magicType);
     shell.register_magic_function(loadBundle, magicType);
     shell.register_magic_function(loadBundleMakeImage, magicType);
     shell.register_magic_function(loadCatalog, magicType);
     shell.register_magic_function(makeImage, magicType);
     shell.register_magic_function(makeMovie, magicType);
     shell.register_magic_function(setRamadda, magicType);
+    shell.register_magic_function(setCaseStudy, magicType);
     shell.register_magic_function(createCaseStudy, magicType);
     shell.register_magic_function(setBBOX, magicType);
     shell.register_magic_function(saveBundle, magicType);
@@ -327,3 +422,5 @@ def load_ipython_extension(shell):
 
 print("Drilsdown extension loaded");
 print("Do: %idvHelp to see Drilsdown commands");
+
+makeUI("");
