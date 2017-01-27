@@ -119,8 +119,10 @@ def makeButton(label, callback):
 
 
 def makeUI(line):
-    display(makeButton("Run IDV",runIDVClicked));
-    display(makeButton("Make Image",makeImageClicked));
+    display(HBox([makeButton("Run IDV",runIDVClicked),
+                  makeButton("Make Image",makeImageClicked),
+                  makeButton("Help",idvHelp)
+                  ]));
 
 def runIDVClicked(b):
     runIdv("");
@@ -142,6 +144,7 @@ def listRamaddaClicked(b):
 ##
 
 def idvHelp(line, cell=None):
+    print("idvHelp  Show this help message");
     print("runIdv");
     print("loadBundle <bundle url or file path>");
     print("           If no bundle given and if setRamadda has been called the bundle will be fetched from RAMADDA");
@@ -149,7 +152,7 @@ def idvHelp(line, cell=None):
     print("loadCatalog Load the case study catalog into the IDV");
     print("makeImage <-publish> Capture an IDV image and optionally publish it to RAMADDA");
     print("makeMovie <-publish> Capture an IDV movie and optionally publish it to RAMADDA");
-    print("saveBundle <xidv or zidv filename> - write out the bundle");
+    print("saveBundle <xidv or zidv filename> <-publish> - write out the bundle and optionally publish to RAMADDA");
     print("publishBundle  <xidv or zidv filename> - write out the bundle and publish it to RAMADDA");
     print("publishNotebook <notebook file name> - publish the current notebook to RAMADDA via the IDV");
     print("setRamadda <ramadda url to a Drilsdown case study (or setCaseStudy)>");
@@ -298,7 +301,7 @@ def setRamadda(line, cell=None):
     ramaddaBase += path;
     ramaddaEntryId = re.search("entryid=([^&]+)", toks.query).group(1);
     baseName =  readUrl(ramaddaBase+"/entry/show?output=entry.csv&fields=name&entryid=" + ramaddaEntryId).split("\n")[1];
-    display(HTML("Current ramadda: <a target=ramadda href=" + line +">" + baseName+"</a><br>"));
+    display(HTML("Current Entry: <a target=ramadda href=" + line +">" + baseName+"</a><br>"));
     listRamadda(ramaddaEntryId);
 
 
@@ -421,6 +424,5 @@ def load_ipython_extension(shell):
 
 
 print("Drilsdown extension loaded");
-print("Do: %idvHelp to see Drilsdown commands");
 
 makeUI("");
