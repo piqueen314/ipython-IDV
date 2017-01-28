@@ -18,7 +18,9 @@ import subprocess;
 from base64 import b64encode;
 from IPython.display import HTML;
 from IPython.display import Image;
+from IPython.display import IFrame;
 from IPython.display import display;
+from IPython.display import clear_output;
 from tempfile import NamedTemporaryFile;
 from IPython.display import FileLink;
 import time;
@@ -38,19 +40,23 @@ except ImportError:
     from urlparse import urlparse
     from urllib import urlopen, urlencode
 
+
 idvDebug = 0;
 
+##Use geodesystems drilsdown folder as the default
+ramaddaHost = "http://geodesystems.com";
+ramaddaBase = "http://geodesystems.com/repository";
+ramaddaEntryId = "12704a38-9a06-4989-aac4-dafbbe13a675";
+
+
 #How we talk to the running IDV
-#The port is defined by the idv.monitorport = 8080 in the .unidata/idv/DefaultIdv/idv.properties
+#The port is defined by the idv.monitorport = 8765 in the .unidata/idv/DefaultIdv/idv.properties
 idvBaseUrl = "http://127.0.0.1:8765";
 
 #These correspond to the commands in ucar.unidata.idv.IdvMonitor
 cmd_ping = "/ping";
 cmd_loadisl = "/loadisl";
 
-
-ramaddaBase = None;
-ramaddaEntry = None;
 
 #The global bounding box
 bbox = None;
@@ -117,12 +123,72 @@ def makeButton(label, callback):
     b.on_click(callback);
     return b;
 
+def handleSearch(widget):
+    global ramaddaBase;
+    if ramaddaBase == None or ramaddaBase == "":
+        print("You need to call setRamadda first");
+        return;
+    type = widget.type;
+    value  =  widget.value.replace(" ","%20");
+    if type == "":
+        url = ramaddaBase +"/search/do?output=default.csv&fields=name,id,type,icon&text=" + value;
+    else:
+        url = ramaddaBase +"/search/type/" + type +"?output=default.csv&fields=name,id,type,icon&text=" + value;    
+    csv = readUrl(url);
+    display(HTML("<b>Search Results:</b> " + widget.value +" <br>"));
+    listCsv(csv);
+
+
 
 def makeUI(line):
-    display(HBox([makeButton("Run IDV",runIDVClicked),
-                  makeButton("Make Image",makeImageClicked),
-                  makeButton("Help",idvHelp)
-                  ]));
+    global ramaddaEntryId;
+    search = widgets.Text(
+    value='',
+    placeholder='Search for an IDV bundle',
+    description='',
+    disabled=False)
+    search.on_submit(handleSearch);
+    search.type = "type_idv_bundle";
+
+    cssearch = widgets.Text(
+    value='',
+    placeholder='Search for a Drilsdown Case Study',
+    description='',
+    disabled=False)
+    cssearch.on_submit(handleSearch);
+    cssearch.type = "type_drilsdown_casestudy";
+
+
+    gridsearch = widgets.Text(
+    value='',
+    placeholder='Search for gridded data',
+    description='',
+    disabled=False)
+    gridsearch.on_submit(handleSearch);
+    gridsearch.type = "cdm_grid";
+
+    allsearch = widgets.Text(
+    value='',
+    placeholder='Search for anything',
+    description='',
+    disabled=False)
+    allsearch.on_submit(handleSearch);
+    allsearch.type = "";
+
+
+    listBtn = makeButton("List",listRamaddaClicked);
+    listBtn.entryid = "";
+    display(VBox([
+                HBox([makeButton("Run IDV",runIDVClicked),
+                      makeButton("Make Image",makeImageClicked),
+                      listBtn,
+                      makeButton("Help",idvHelp)]),
+                HBox([search,
+                      cssearch]),
+                HBox([gridsearch,
+                      allsearch]),
+                
+]));
 
 def runIDVClicked(b):
     runIdv("");
@@ -133,9 +199,21 @@ def makeImageClicked(b):
 def loadBundleClicked(b):
     loadBundle(b.url);
 
+def viewUrlClicked(b):
+    display(HTML("<a target=ramadda href=" + b.url +">" + b.name+"</a>"));
+    display(IFrame(src=b.url,width=800, height=400));
+
+
+def loadDataClicked(b):
+    loadData(b.url);
+
 def listRamaddaClicked(b):
-    display(HTML("<hr>"));
-    listRamadda(b.entryid);
+    global ramaddaEntryId;
+#   display(HTML("<hr>"));
+    if b.entryid == "":
+        listRamadda(ramaddaEntryId);
+    else:
+        listRamadda(b.entryid);
 
 
 
@@ -146,6 +224,7 @@ def listRamaddaClicked(b):
 def idvHelp(line, cell=None):
     print("idvHelp  Show this help message");
     print("runIdv");
+    print("makeUI");
     print("loadBundle <bundle url or file path>");
     print("           If no bundle given and if setRamadda has been called the bundle will be fetched from RAMADDA");
     print("loadBundleMakeImage <bundle url or file path>");
@@ -193,6 +272,16 @@ def createCaseStudy(line, cell=None):
     print (url);
     print("Then call %setRamadda with the new Case Study URL");
 
+
+def loadData(line, cell=None):
+    extra1 = "";
+    extra2 = "";
+    isl = '<isl>\n<datasource url="' + line +'" ' + extra1 +'/>' + extra2 +'\n</isl>';
+    if idvCall(cmd_loadisl, {"isl": isl}) == None:
+        print("loadData failed");
+        return;
+    print("data loaded");
+    
 
 def loadBundle(line, cell=None):
     global bbox;
@@ -300,11 +389,20 @@ def setRamadda(line, cell=None):
     path = re.sub("/entry.*","", toks.path);
     ramaddaBase += path;
     ramaddaEntryId = re.search("entryid=([^&]+)", toks.query).group(1);
-    baseName =  readUrl(ramaddaBase+"/entry/show?output=entry.csv&fields=name&entryid=" + ramaddaEntryId).split("\n")[1];
-    display(HTML("Current Entry: <a target=ramadda href=" + line +">" + baseName+"</a><br>"));
     listRamadda(ramaddaEntryId);
 
 
+
+#
+#make a href for the given entry
+#
+def makeEntryHref(entryId, name, icon = None):
+    global ramaddaBase;
+    global ramaddaHost;
+    html = '<a target=ramadda href="' + ramaddaBase  +'/entry/show?entryid=' + entryId  + '">' + name +'</a>';
+    if icon is not None:
+        html = "<img src=" + ramaddaHost + icon+"> " + html;
+    return html;
 
 #
 #List the entries held by the entry id
@@ -312,11 +410,25 @@ def setRamadda(line, cell=None):
 def listRamadda(entryId):
     global ramaddaBase;
     global ramaddaHost;
+    toks =  readUrl(ramaddaBase+"/entry/show?output=entry.csv&fields=name,icon&entryid=" + entryId).split("\n")[1].split(",");
+    baseName =  toks[0];
+    icon =  toks[1];
+    display(HTML("<b>" + "<img src=" + ramaddaHost + icon+"> " + "<a target=ramadda href=" +ramaddaBase +"/entry/show?entryid=" + entryId +">" + baseName+"</a></b><br>"));
     csv = readUrl(ramaddaBase+"/entry/show?entryid=" + entryId +"&output=default.csv&fields=name,id,type,icon");
+    listCsv(csv);
+
+
+#
+#Display the csv listing of entries from RAMADDA
+#
+def listCsv(csv):
     lines =  csv.split("\n");
     html = "";
     cnt = 0;
+    indent = HTML("&nbsp;&nbsp;&nbsp;");
     for i in range(len(lines)):
+        if cnt > 100:
+            break;
         if i > 0:
             line2 =  lines[i].split(",");
             if len(line2)==4 :
@@ -328,15 +440,25 @@ def listRamadda(entryId):
                 if type == "type_idv_bundle":
                     b  = makeButton("Load bundle",loadBundleClicked);
                     b.url  = ramaddaBase +"/entry/get?entryid=" + id;
-                    box = HBox([b, Label(name)])
+                    box = HBox([indent, b, HTML(makeEntryHref(id,  name, icon))])
+                    display(box);
+                elif type == "cdm_grid" or name.endswith(".nc") :
+                    b  = makeButton("Load data",loadDataClicked);
+                    b.url  = ramaddaBase +"/entry/get?entryid=" + id;
+                    box = HBox([indent, b, HTML(makeEntryHref(id,  name, icon))])
                     display(box);
                 elif type=="type_drilsdown_casestudy" or type=="group":
                     b  = makeButton("List",listRamaddaClicked);
                     b.entryid = id;
-                    box = HBox([b, Label(name)])
+                    box = HBox([indent, b,  HTML(makeEntryHref(id,  name, icon))])
                     display(box);
                 else:
-                    html+= "<img src=" + ramaddaHost + icon+"> " + '<a target=ramadda href=' + ramaddaBase +"/entry/show?entryid=" + id +">" + name +"</a><br>";                
+                    b  = makeButton("View",viewUrlClicked);
+                    b.url = ramaddaBase + "/entry/show?entryid=" + id;
+                    b.name = name;
+                    box = HBox([indent, b, HTML(makeEntryHref(id,  name, icon)) ])
+                    display(box);
+#                    html+= "<img src=" + ramaddaHost + icon+"> " + '<a target=ramadda href=' + ramaddaBase +"/entry/show?entryid=" + id +">" + name +"</a><br>";                
     if cnt == 0:
         html = "<b>No entries found</b>";
     display(HTML(html));                
@@ -418,11 +540,5 @@ def load_ipython_extension(shell):
     shell.register_magic_function(saveBundle, magicType);
     shell.register_magic_function(publishBundle, magicType);
     shell.register_magic_function(publishNotebook, magicType);
-
-
-
-
-
-print("Drilsdown extension loaded");
 
 makeUI("");
