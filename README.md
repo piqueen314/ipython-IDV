@@ -6,7 +6,9 @@ Part of the [DRILSDOWN project](https://github.com/Unidata/drilsdown)
 
 To set this up:
 
-After installing the iPyhton notebook to your maching copy the [drilsdown.py](https://github.com/Unidata/ipython-IDV/blob/master/drilsdown.py) extension to your local extensions directory -
+After installing the iPython notebook to your machine you will also need to install the [ipywidgets package](https://ipywidgets.readthedocs.io/en/latest/user_install.html)
+
+Once installed copy the [drilsdown.py](https://github.com/Unidata/ipython-IDV/blob/master/drilsdown.py) extension to your local extensions directory -
 ~/ipython/extensions
 
 When you run the iPython notebook do:
@@ -15,14 +17,9 @@ When you run the iPython notebook do:
 %load_ext drilsdown
 </pre>
 
-You should see:
+You should see an initial user interface including a link to the help section.
 
-<pre>
-Drilsdown extension loaded
-Do: %idvHelp to see Drilsdown commands
-</pre>
-
-This requires that you have an [IDV version 5.3u1](http://www.unidata.ucar.edu/software/idv/nightly/) or above and set IDV_HOME environment variable to the IDV install directory. The python will run:
+To run the IDV commands you need to have the latest [IDV version 5.3u1](http://www.unidata.ucar.edu/software/idv/nightly/) or above and set IDV_HOME environment variable to the IDV install directory. The python will run:
 ${IDV_HOME}/runIDV
 
 
