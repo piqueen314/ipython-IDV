@@ -566,6 +566,6 @@ def load_ipython_extension(shell):
     shell.register_magic_function(publishBundle, magicType);
     shell.register_magic_function(publishNotebook, magicType);
 
-print("Loaded");
+
 makeUI("");
 
