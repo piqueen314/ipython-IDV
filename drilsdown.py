@@ -181,6 +181,7 @@ def makeUI(line):
     display(VBox([
                 HBox([makeButton("Run IDV",runIDVClicked),
                       makeButton("Make Image",makeImageClicked),
+                      makeButton("Make Movie",makeMovieClicked),
                       listBtn,
                       makeButton("Help",idvHelp)]),
                 HBox([search,
@@ -195,6 +196,9 @@ def runIDVClicked(b):
 
 def makeImageClicked(b):
     display(makeImage(""));
+
+def makeMovieClicked(b):
+    display(makeMovie(""));
 
 def loadBundleClicked(b):
     loadBundle(b.url);
@@ -214,6 +218,10 @@ def listRamaddaClicked(b):
         listRamadda(ramaddaEntryId);
     else:
         listRamadda(b.entryid);
+
+
+def loadCatalogClicked(b):
+    loadCatalog(b.url);
 
 
 
@@ -243,10 +251,16 @@ def idvHelp(line, cell=None):
 
 def loadCatalog(line, cell=None):
     global ramaddaEntryId;
-    if ramaddaBase == None or ramaddaBase == "":
-        print("You need to call setRamadda first");
-        return;
-    url = ramaddaBase +"/entry/show?parentof=" + ramaddaEntryId +"&amp;output=thredds.catalog";
+    global ramaddaBase;
+    url = "";
+    if line  != "":
+        url = line;
+        url = url.replace("&","&amp;");
+    else:
+        if ramaddaBase == None or ramaddaBase == "":
+            print("You need to call setRamadda first");
+            return;
+        url = ramaddaBase +"/entry/show?parentof=" + ramaddaEntryId +"&amp;output=thredds.catalog";
     isl = '<isl>\n<loadcatalog url="' + url+'"/></isl>';
     if idvCall(cmd_loadisl, {"isl": isl}) == None:
         print("loadCatalog failed");
@@ -437,26 +451,37 @@ def listCsv(csv):
                 id = line2[1];
                 type = line2[2];
                 icon = line2[3];
+                if len(name)>20:
+                    name = name[:20-len(name)];
+
+                name = name.ljust(20," ");
+                name = name.replace(" ","&nbsp;");
+                name  = "<span style=font-family:monospace;>" + name +"</span>";
+                href = makeEntryHref(id,  name, icon);
+
+                href = HTML(href);
                 if type == "type_idv_bundle":
                     b  = makeButton("Load bundle",loadBundleClicked);
                     b.url  = ramaddaBase +"/entry/get?entryid=" + id;
-                    box = HBox([indent, b, HTML(makeEntryHref(id,  name, icon))])
+                    box = HBox([indent, href, b ])
                     display(box);
                 elif type == "cdm_grid" or name.endswith(".nc") :
                     b  = makeButton("Load data",loadDataClicked);
                     b.url  = ramaddaBase +"/entry/get?entryid=" + id;
-                    box = HBox([indent, b, HTML(makeEntryHref(id,  name, icon))])
+                    box = HBox([indent, href, b])
                     display(box);
                 elif type=="type_drilsdown_casestudy" or type=="group":
                     b  = makeButton("List",listRamaddaClicked);
                     b.entryid = id;
-                    box = HBox([indent, b,  HTML(makeEntryHref(id,  name, icon))])
+                    loadCatalog  = makeButton("Load Catalog",loadCatalogClicked);
+                    loadCatalog.url = ramaddaBase +"/entry/show?output=thredds.catalog&entryid=" + id;
+                    box = HBox([indent, href, b, loadCatalog]);
                     display(box);
                 else:
                     b  = makeButton("View",viewUrlClicked);
                     b.url = ramaddaBase + "/entry/show?entryid=" + id;
                     b.name = name;
-                    box = HBox([indent, b, HTML(makeEntryHref(id,  name, icon)) ])
+                    box = HBox([indent, href, b  ])
                     display(box);
 #                    html+= "<img src=" + ramaddaHost + icon+"> " + '<a target=ramadda href=' + ramaddaBase +"/entry/show?entryid=" + id +">" + name +"</a><br>";                
     if cnt == 0:
@@ -541,4 +566,6 @@ def load_ipython_extension(shell):
     shell.register_magic_function(publishBundle, magicType);
     shell.register_magic_function(publishNotebook, magicType);
 
+print("Loaded");
 makeUI("");
+
