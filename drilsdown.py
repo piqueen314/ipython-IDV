@@ -113,13 +113,14 @@ def readUrl(url):
     return urlopen(url).read().decode("utf-8");
 
 
-def makeButton(label, callback):
+def makeButton(label, callback, extra=None):
     b = widgets.Button(
         description=label,
         disabled=False,
         button_style='', # 'success', 'info', 'warning', 'danger' or ''
         tooltip=label,
         )
+    b.extra  = extra;
     b.on_click(callback);
     return b;
 
@@ -178,12 +179,21 @@ def makeUI(line):
 
     listBtn = makeButton("List",listRamaddaClicked);
     listBtn.entryid = "";
+    
+    cbx = widgets.Checkbox(
+        value=False,
+        description='Publish',
+        disabled=False);
+
     display(VBox([
                 HBox([makeButton("Run IDV",runIDVClicked),
-                      makeButton("Make Image",makeImageClicked),
-                      makeButton("Make Movie",makeMovieClicked),
                       listBtn,
                       makeButton("Help",idvHelp)]),
+                     HBox([
+                      makeButton("Make Image",makeImageClicked, cbx),
+                      makeButton("Make Movie",makeMovieClicked,cbx),
+                      makeButton("Save Bundle",saveBundleClicked,cbx),
+                      cbx]),
                 HBox([search,
                       cssearch]),
                 HBox([gridsearch,
@@ -194,11 +204,23 @@ def makeUI(line):
 def runIDVClicked(b):
     runIdv("");
 
+def saveBundleClicked(b):
+    extra = "";
+    if b.extra.value == True:
+        extra = "-publish"
+    saveBundle(extra);
+
 def makeImageClicked(b):
-    display(makeImage(""));
+    extra = "";
+    if b.extra.value:
+        extra = "-publish"
+    display(makeImage(extra));
 
 def makeMovieClicked(b):
-    display(makeMovie(""));
+    extra = "";
+    if b.extra.value:
+        extra = "-publish"
+    display(makeMovie(extra));
 
 def loadBundleClicked(b):
     loadBundle(b.url);
@@ -495,21 +517,21 @@ def listCsv(csv):
 def saveBundle(line, cell=None):
     extra = "";
     filename = "idv.xidv";
-
     toks = line.split(" ");
     for i in range(len(toks)):
         tok  = toks[i];
-        if tok == "-publish":
-            extra +=' publish="true" '
-        else:
-            filename = tok;
+        if tok!="":
+            if tok == "-publish":
+                extra +=' publish="true" '
+            else:
+                filename = tok;
     isl = '<isl><save file="' + filename +'"' + extra +'/></isl>';
     result = idvCall(cmd_loadisl, {"isl": isl});
     if result == None:
         print("save failed");
         return;
     if os.path.isfile(filename):
-        print ("bundle saved");
+        print ("bundle saved:" + filename);
         return FileLink(filename)
     print ("bundle not saved");
 
@@ -529,7 +551,7 @@ def publishBundle(line, cell=None):
         print("URL: " + result);
 
     if os.path.isfile(filename):
-        print ("bundle saved");
+        print ("bundle saved:" + filename);
         return FileLink(filename)
     print ("bundle not saved");
 
