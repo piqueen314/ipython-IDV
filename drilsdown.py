@@ -209,7 +209,9 @@ def viewUrlClicked(b):
 
 
 def loadDataClicked(b):
-    loadData(b.url);
+    global ramaddaBase;
+    url = ramaddaBase +"/opendap/" + b.entryid +"/entry.das";
+    loadData(url);
 
 def listRamaddaClicked(b):
     global ramaddaEntryId;
@@ -230,21 +232,22 @@ def loadCatalogClicked(b):
 ##
 
 def idvHelp(line, cell=None):
-    print("idvHelp  Show this help message");
-    print("runIdv");
-    print("makeUI");
-    print("loadBundle <bundle url or file path>");
-    print("           If no bundle given and if setRamadda has been called the bundle will be fetched from RAMADDA");
-    print("loadBundleMakeImage <bundle url or file path>");
-    print("loadCatalog Load the case study catalog into the IDV");
-    print("makeImage <-publish> Capture an IDV image and optionally publish it to RAMADDA");
-    print("makeMovie <-publish> Capture an IDV movie and optionally publish it to RAMADDA");
-    print("saveBundle <xidv or zidv filename> <-publish> - write out the bundle and optionally publish to RAMADDA");
-    print("publishBundle  <xidv or zidv filename> - write out the bundle and publish it to RAMADDA");
-    print("publishNotebook <notebook file name> - publish the current notebook to RAMADDA via the IDV");
-    print("setRamadda <ramadda url to a Drilsdown case study (or setCaseStudy)>");
-    print("createCaseStudy <case study name>");
-    print("setBBOX <north west south east> No arguments to clear the bbox");
+    html =  "<pre>idvHelp  Show this help message<br>" + \
+    "runIdv<br>" + \
+    "makeUI<br>" +\
+    "loadBundle <bundle url or file path><br>" + \
+    "           If no bundle given and if setRamadda has been called the bundle will be fetched from RAMADDA<br>" +\
+    "loadBundleMakeImage <bundle url or file path><br>" +\
+    "loadCatalog Load the case study catalog into the IDV<br>" +\
+    "makeImage <-publish> Capture an IDV image and optionally publish it to RAMADDA<br>" +\
+    "makeMovie <-publish> Capture an IDV movie and optionally publish it to RAMADDA<br>" +\
+    "saveBundle <xidv or zidv filename> <-publish> - write out the bundle and optionally publish to RAMADDA<br>" +\
+    "publishBundle  <xidv or zidv filename> - write out the bundle and publish it to RAMADDA<br>" +\
+    "publishNotebook <notebook file name> - publish the current notebook to RAMADDA via the IDV<br>" +\
+    "setRamadda <ramadda url to a Drilsdown case study (or setCaseStudy)><br>" +\
+    "createCaseStudy <case study name><br>" +\
+    "setBBOX <north west south east> No arguments to clear the bbox<br></pre>";
+    display(HTML(html));
 
 
 
@@ -467,7 +470,7 @@ def listCsv(csv):
                     display(box);
                 elif type == "cdm_grid" or name.endswith(".nc") :
                     b  = makeButton("Load data",loadDataClicked);
-                    b.url  = ramaddaBase +"/entry/get?entryid=" + id;
+                    b.entryid  = id;
                     box = HBox([indent, href, b])
                     display(box);
                 elif type=="type_drilsdown_casestudy" or type=="group":
