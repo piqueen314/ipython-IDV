@@ -21,6 +21,7 @@ from IPython.display import Image;
 from IPython.display import IFrame;
 from IPython.display import display;
 from IPython.display import clear_output;
+
 from tempfile import NamedTemporaryFile;
 from IPython.display import FileLink;
 import time;
@@ -43,10 +44,10 @@ except ImportError:
 
 idvDebug = 0;
 
-##Use geodesystems drilsdown folder as the default
-ramaddaHost = "http://geodesystems.com";
-ramaddaBase = "http://geodesystems.com/repository";
-ramaddaEntryId = "12704a38-9a06-4989-aac4-dafbbe13a675";
+##Use Brian's ramadda as the default
+ramaddaHost = "http://weather.rsmas.miami.edu";
+ramaddaBase = "http://weather.rsmas.miami.edu/repository";
+ramaddaEntryId = "45e3b50b-dbe2-408b-a6c2-2c009749cd53";
 
 
 #How we talk to the running IDV
@@ -200,6 +201,10 @@ def makeUI(line):
                       allsearch]),
                 
 ]));
+
+def reloadClicked(b):
+    ipython = get_ipython();
+    ipython.magic("reload_ext drilsdown");
 
 def runIDVClicked(b):
     runIdv("");
