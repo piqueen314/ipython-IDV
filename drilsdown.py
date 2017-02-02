@@ -133,9 +133,9 @@ def handleSearch(widget):
     type = widget.type;
     value  =  widget.value.replace(" ","%20");
     if type == "":
-        url = ramaddaBase +"/search/do?output=default.csv&fields=name,id,type,icon&text=" + value;
+        url = ramaddaBase +"/search/do?output=default.csv&fields=name,id,type,icon,url&text=" + value;
     else:
-        url = ramaddaBase +"/search/type/" + type +"?output=default.csv&fields=name,id,type,icon&text=" + value;    
+        url = ramaddaBase +"/search/type/" + type +"?output=default.csv&fields=name,id,type,icon,url&text=" + value;    
     csv = readUrl(url);
     display(HTML("<b>Search Results:</b> " + widget.value +" <br>"));
     listCsv(csv);
@@ -189,6 +189,7 @@ def makeUI(line):
     display(VBox([
                 HBox([makeButton("Run IDV",runIDVClicked),
                       listBtn,
+##                      makeButton("Clear",clearClicked),
                       makeButton("Help",idvHelp)]),
                      HBox([
                       makeButton("Make Image",makeImageClicked, cbx),
@@ -251,6 +252,11 @@ def listRamaddaClicked(b):
 
 def loadCatalogClicked(b):
     loadCatalog(b.url);
+
+def clearClicked(b):
+    ipython = get_ipython();
+    ipython.magic("reset -f");
+    makeUI("");
 
 
 
@@ -440,10 +446,10 @@ def setRamadda(line, cell=None):
 #
 #make a href for the given entry
 #
-def makeEntryHref(entryId, name, icon = None):
+def makeEntryHref(entryId, name, icon = None, alt = ""):
     global ramaddaBase;
     global ramaddaHost;
-    html = '<a target=ramadda href="' + ramaddaBase  +'/entry/show?entryid=' + entryId  + '">' + name +'</a>';
+    html = '<a target=ramadda title="' + alt +'" href="' + ramaddaBase  +'/entry/show?entryid=' + entryId  + '">' + name +'</a>';
     if icon is not None:
         html = "<img src=" + ramaddaHost + icon+"> " + html;
     return html;
@@ -458,7 +464,7 @@ def listRamadda(entryId):
     baseName =  toks[0];
     icon =  toks[1];
     display(HTML("<b>" + "<img src=" + ramaddaHost + icon+"> " + "<a target=ramadda href=" +ramaddaBase +"/entry/show?entryid=" + entryId +">" + baseName+"</a></b><br>"));
-    csv = readUrl(ramaddaBase+"/entry/show?entryid=" + entryId +"&output=default.csv&fields=name,id,type,icon");
+    csv = readUrl(ramaddaBase+"/entry/show?entryid=" + entryId +"&output=default.csv&fields=name,id,type,icon,url");
     listCsv(csv);
 
 
@@ -475,22 +481,26 @@ def listCsv(csv):
             break;
         if i > 0:
             line2 =  lines[i].split(",");
-            if len(line2)==4 :
+            if len(line2)>=5:
                 cnt = cnt+1;
                 name = line2[0];
                 id = line2[1];
                 type = line2[2];
                 icon = line2[3];
-                if len(name)>20:
-                    name = name[:20-len(name)];
+                url = line2[4];
+                
+                fullName = name;
+                maxLength  = 25;
+                if len(name)>maxLength:
+                    name = name[:maxLength-len(name)];
 
-                name = name.ljust(20," ");
+                name = name.ljust(maxLength," ");
                 name = name.replace(" ","&nbsp;");
-                name  = "<span style=font-family:monospace;>" + name +"</span>";
-                href = makeEntryHref(id,  name, icon);
+                href = makeEntryHref(id,  name, icon, fullName);
+                href  = "<span style=font-family:monospace;>" + href +"</span>";
 
                 href = HTML(href);
-                if type == "type_idv_bundle":
+                if type == "type_idv_bundle" or url.find("xidv") >=0 or url.find("zidv")>=0:
                     b  = makeButton("Load bundle",loadBundleClicked);
                     b.url  = ramaddaBase +"/entry/get?entryid=" + id;
                     box = HBox([indent, href, b ])
