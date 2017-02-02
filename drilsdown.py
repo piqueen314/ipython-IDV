@@ -46,7 +46,7 @@ idvDebug = 0;
 
 ##Use Brian's ramadda as the default
 ramaddaHost = "http://weather.rsmas.miami.edu";
-ramaddaBase = ramaddaBase +"/repository";
+ramaddaBase = ramaddaHost +"/repository";
 ramaddaEntryId = "45e3b50b-dbe2-408b-a6c2-2c009749cd53";
 
 ramaddas  ={"Brian Mapes RAMADDA": 
@@ -299,7 +299,7 @@ def loadBundleClicked(b):
     loadBundle(b.url);
 
 def viewUrlClicked(b):
-    display(HTML("<a target=ramadda href=" + b.url +">" + b.name+"</a>"));
+    doDisplay(HTML("<a target=ramadda href=" + b.url +">" + b.name+"</a>"));
     display(IFrame(src=b.url,width=800, height=400));
 
 
