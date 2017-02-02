@@ -46,9 +46,15 @@ idvDebug = 0;
 
 ##Use Brian's ramadda as the default
 ramaddaHost = "http://weather.rsmas.miami.edu";
-ramaddaBase = "http://weather.rsmas.miami.edu/repository";
+ramaddaBase = ramaddaBase +"/repository";
 ramaddaEntryId = "45e3b50b-dbe2-408b-a6c2-2c009749cd53";
 
+ramaddas  ={"Brian Mapes RAMADDA": 
+            "http://weather.rsmas.miami.edu/repository/entry/show?entryid=45e3b50b-dbe2-408b-a6c2-2c009749cd53", 
+            "Geode Systems RAMADDA": 
+            "http://geodesystems.com/repository/entry/show?entryid=12704a38-9a06-4989-aac4-dafbbe13a675",
+            "Unidata's RAMADDA":
+            "http://motherlode.ucar.edu/repository/entry/show?entryid=0"};
 
 #How we talk to the running IDV
 #The port is defined by the idv.monitorport = 8765 in the .unidata/idv/DefaultIdv/idv.properties
@@ -61,6 +67,18 @@ cmd_loadisl = "/loadisl";
 
 #The global bounding box
 bbox = None;
+
+
+displayedItems = [];
+
+##
+##Call this to display a component that can later be cleared with the Clear button
+##
+def doDisplay(comp):
+    global displayedItems;
+    display(comp);
+    displayedItems.append(comp);
+
 
 def runIdv(line = None, cell=None):
 #Check if the IDV is running
@@ -133,20 +151,27 @@ def handleSearch(widget):
     type = widget.type;
     value  =  widget.value.replace(" ","%20");
     if type == "":
-        url = ramaddaBase +"/search/do?output=default.csv&fields=name,id,type,icon,url&text=" + value;
+        url = ramaddaBase +"/search/do?output=default.csv&escapecommas=true&fields=name,id,type,icon,url&text=" + value;
     else:
-        url = ramaddaBase +"/search/type/" + type +"?output=default.csv&fields=name,id,type,icon,url&text=" + value;    
+        url = ramaddaBase +"/search/type/" + type +"?output=default.csv&escapecommas=true&fields=name,id,type,icon,url&text=" + value;    
     csv = readUrl(url);
-    display(HTML("<b>Search Results:</b> " + widget.value +" <br>"));
-    listCsv(csv);
+    listCsv("<b>Search Results:</b> " + widget.value +" <br>", csv);
 
 
 
 def makeUI(line):
     global ramaddaEntryId;
+    global ramaddas;
+    textLayout=Layout(width='150px');
+    ramaddaSelector = widgets.Dropdown(
+        options=ramaddas,
+        value="http://weather.rsmas.miami.edu/repository/entry/show?entryid=45e3b50b-dbe2-408b-a6c2-2c009749cd53",
+        );
+
     search = widgets.Text(
+        layout=textLayout,
     value='',
-    placeholder='Search for an IDV bundle',
+    placeholder='IDV bundle',
     description='',
     disabled=False)
     search.on_submit(handleSearch);
@@ -154,7 +179,8 @@ def makeUI(line):
 
     cssearch = widgets.Text(
     value='',
-    placeholder='Search for a Drilsdown Case Study',
+        layout=textLayout,
+    placeholder='Case study',
     description='',
     disabled=False)
     cssearch.on_submit(handleSearch);
@@ -163,7 +189,8 @@ def makeUI(line):
 
     gridsearch = widgets.Text(
     value='',
-    placeholder='Search for gridded data',
+        layout=textLayout,
+    placeholder='Gridded data',
     description='',
     disabled=False)
     gridsearch.on_submit(handleSearch);
@@ -171,7 +198,8 @@ def makeUI(line):
 
     allsearch = widgets.Text(
     value='',
-    placeholder='Search for anything',
+        layout=textLayout,
+    placeholder='All',
     description='',
     disabled=False)
     allsearch.on_submit(handleSearch);
@@ -186,22 +214,61 @@ def makeUI(line):
         description='Publish',
         disabled=False);
 
+    lonRange = widgets.FloatRangeSlider(
+        value=[-180, 180],
+        min=-180,
+        max=180.0,
+        step=1.0,
+        description='Lon:',
+        disabled=False,
+        continuous_update=False,
+        orientation='horizontal',
+        readout=True,
+        readout_format='i',
+        slider_color='white',
+        color='black'
+        )
+
+
+    latRange = widgets.FloatRangeSlider(
+        value=[-90, 90],
+        min=-90,
+        max=90.0,
+        step=1.0,
+        description='Lat:',
+        disabled=False,
+        continuous_update=False,
+        orientation='horizontal',
+        readout=True,
+        readout_format='i',
+        slider_color='white',
+        color='black'
+        )
+
+
+    ramaddaSelector.observe(ramaddaSelectorChanged,names='value');
     display(VBox([
-                HBox([makeButton("Run IDV",runIDVClicked),
-                      listBtn,
-##                      makeButton("Clear",clearClicked),
-                      makeButton("Help",idvHelp)]),
                      HBox([
+                        makeButton("Run IDV",runIDVClicked),
                       makeButton("Make Image",makeImageClicked, cbx),
                       makeButton("Make Movie",makeMovieClicked,cbx),
                       makeButton("Save Bundle",saveBundleClicked,cbx),
                       cbx]),
-                HBox([search,
-                      cssearch]),
-                HBox([gridsearch,
-                      allsearch]),
+                HBox([
+                      ramaddaSelector,
+                      listBtn,
+                      makeButton("Clear",clearClicked),
+                      makeButton("Help",idvHelp)]),
+##                HBox([lonRange, latRange]),
+                HBox([Label("Search for:"), search,
+                      cssearch, gridsearch, allsearch]),
                 
 ]));
+
+
+##
+##The button callbacks
+##
 
 def reloadClicked(b):
     ipython = get_ipython();
@@ -220,13 +287,13 @@ def makeImageClicked(b):
     extra = "";
     if b.extra.value:
         extra = "-publish"
-    display(makeImage(extra));
+    makeImage(extra);
 
 def makeMovieClicked(b):
     extra = "";
     if b.extra.value:
         extra = "-publish"
-    display(makeMovie(extra));
+    makeMovie(extra);
 
 def loadBundleClicked(b):
     loadBundle(b.url);
@@ -243,7 +310,6 @@ def loadDataClicked(b):
 
 def listRamaddaClicked(b):
     global ramaddaEntryId;
-#   display(HTML("<hr>"));
     if b.entryid == "":
         listRamadda(ramaddaEntryId);
     else:
@@ -253,11 +319,19 @@ def listRamaddaClicked(b):
 def loadCatalogClicked(b):
     loadCatalog(b.url);
 
-def clearClicked(b):
-    ipython = get_ipython();
-    ipython.magic("reset -f");
-    makeUI("");
+def ramaddaSelectorChanged(s):
+    setRamadda(s['new']);
 
+
+
+def clearClicked(b):
+    clear_output();
+    global displayedItems;
+    for i in range(len(displayedItems)):
+        displayedItems[i].close();
+
+
+displayedItems = [];
 
 
 ##
@@ -280,7 +354,7 @@ def idvHelp(line, cell=None):
     "setRamadda <ramadda url to a Drilsdown case study (or setCaseStudy)><br>" +\
     "createCaseStudy <case study name><br>" +\
     "setBBOX <north west south east> No arguments to clear the bbox<br></pre>";
-    display(HTML(html));
+    doDisplay(HTML(html));
 
 
 
@@ -380,7 +454,8 @@ def makeImage(line, cell=None):
         data = open(f.name, "rb").read()
         data = b64encode(data).decode('ascii');
         img = '<img src="data:image/gif;base64,{0}">';
-        return HTML(img.format(data));
+        doDisplay(HTML(img.format(data)));
+
 
 
 def publishNotebook(line, cell=None):
@@ -422,7 +497,7 @@ def makeMovie(line, cell=None):
         data = open(f.name, "rb").read()
         data = b64encode(data).decode('ascii');
         img = '<img src="data:image/gif;base64,{0}">';
-        return HTML(img.format(data));
+        doDisplay(HTML(img.format(data)));
 
 def setCaseStudy(line, cell=None):
     return setRamadda(line, cell);
@@ -460,22 +535,22 @@ def makeEntryHref(entryId, name, icon = None, alt = ""):
 def listRamadda(entryId):
     global ramaddaBase;
     global ramaddaHost;
-    toks =  readUrl(ramaddaBase+"/entry/show?output=entry.csv&fields=name,icon&entryid=" + entryId).split("\n")[1].split(",");
+    toks =  readUrl(ramaddaBase+"/entry/show?output=entry.csv&escapecommas=true&fields=name,icon&entryid=" + entryId).split("\n")[1].split(",");
     baseName =  toks[0];
+    baseName  = baseName.replace("_comma_",",");
     icon =  toks[1];
-    display(HTML("<b>" + "<img src=" + ramaddaHost + icon+"> " + "<a target=ramadda href=" +ramaddaBase +"/entry/show?entryid=" + entryId +">" + baseName+"</a></b><br>"));
-    csv = readUrl(ramaddaBase+"/entry/show?entryid=" + entryId +"&output=default.csv&fields=name,id,type,icon,url");
-    listCsv(csv);
+    csv = readUrl(ramaddaBase+"/entry/show?entryid=" + entryId +"&output=default.csv&escapecommas=true&fields=name,id,type,icon,url");
+    listCsv("<b>" + "<img src=" + ramaddaHost + icon+"> " + "<a target=ramadda href=" +ramaddaBase +"/entry/show?entryid=" + entryId +">" + baseName+"</a></b><br>", csv);
 
 
 #
 #Display the csv listing of entries from RAMADDA
 #
-def listCsv(csv):
+def listCsv(label, csv):
     lines =  csv.split("\n");
-    html = "";
     cnt = 0;
     indent = HTML("&nbsp;&nbsp;&nbsp;");
+    rows=[HTML(label)];
     for i in range(len(lines)):
         if cnt > 100:
             break;
@@ -484,6 +559,7 @@ def listCsv(csv):
             if len(line2)>=5:
                 cnt = cnt+1;
                 name = line2[0];
+                name  = name.replace("_comma_",",");
                 id = line2[1];
                 type = line2[2];
                 icon = line2[3];
@@ -498,35 +574,35 @@ def listCsv(csv):
                 name = name.replace(" ","&nbsp;");
                 href = makeEntryHref(id,  name, icon, fullName);
                 href  = "<span style=font-family:monospace;>" + href +"</span>";
-
                 href = HTML(href);
+                row = [indent, href];
                 if type == "type_idv_bundle" or url.find("xidv") >=0 or url.find("zidv")>=0:
                     b  = makeButton("Load bundle",loadBundleClicked);
                     b.url  = ramaddaBase +"/entry/get?entryid=" + id;
-                    box = HBox([indent, href, b ])
-                    display(box);
+                    row.append(b);
                 elif type == "cdm_grid" or name.endswith(".nc") :
                     b  = makeButton("Load data",loadDataClicked);
                     b.entryid  = id;
-                    box = HBox([indent, href, b])
-                    display(box);
+                    row.append(b);
                 elif type=="type_drilsdown_casestudy" or type=="group":
                     b  = makeButton("List",listRamaddaClicked);
                     b.entryid = id;
                     loadCatalog  = makeButton("Load Catalog",loadCatalogClicked);
                     loadCatalog.url = ramaddaBase +"/entry/show?output=thredds.catalog&entryid=" + id;
-                    box = HBox([indent, href, b, loadCatalog]);
-                    display(box);
+                    row.append(b);
+                    row.append(loadCatalog);
                 else:
                     b  = makeButton("View",viewUrlClicked);
                     b.url = ramaddaBase + "/entry/show?entryid=" + id;
                     b.name = name;
-                    box = HBox([indent, href, b  ])
-                    display(box);
-#                    html+= "<img src=" + ramaddaHost + icon+"> " + '<a target=ramadda href=' + ramaddaBase +"/entry/show?entryid=" + id +">" + name +"</a><br>";                
+                    row.append(b);
+                    
+                rows.append(HBox(row));
+
+    doDisplay(VBox(rows));
     if cnt == 0:
-        html = "<b>No entries found</b>";
-    display(HTML(html));                
+        doDisplay(HTML("<b>No entries found</b>"));
+
 
 
 def saveBundle(line, cell=None):
@@ -579,11 +655,9 @@ def setBBOX(line, cell=None):
         print("BBOX is cleared");
         return;
     bbox = toks;
+    print("BBOX is set");
 
 
-def setDDN(line, cell=None):
-    ddnHome = line;
-    print("ddn=" + line);
 
 #
 #Define the magics
