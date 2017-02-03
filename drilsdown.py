@@ -151,9 +151,9 @@ def handleSearch(widget):
     type = widget.type;
     value  =  widget.value.replace(" ","%20");
     if type == "":
-        url = ramaddaBase +"/search/do?output=default.csv&escapecommas=true&fields=name,id,type,icon,url&text=" + value;
+        url = ramaddaBase +"/search/do?output=default.csv&escapecommas=true&fields=name,id,type,icon,url&orderby=name&text=" + value;
     else:
-        url = ramaddaBase +"/search/type/" + type +"?output=default.csv&escapecommas=true&fields=name,id,type,icon,url&text=" + value;    
+        url = ramaddaBase +"/search/type/" + type +"?output=default.csv&escapecommas=true&orderby=name&fields=name,id,type,icon,url&text=" + value;    
     csv = readUrl(url);
     listCsv("<b>Search Results:</b> " + widget.value +" <br>", csv);
 
@@ -306,7 +306,7 @@ def viewUrlClicked(b):
 def loadDataClicked(b):
     global ramaddaBase;
     url = ramaddaBase +"/opendap/" + b.entryid +"/entry.das";
-    loadData(url);
+    loadData(url, None, b.name);
 
 def listRamaddaClicked(b):
     global ramaddaEntryId;
@@ -397,9 +397,11 @@ def createCaseStudy(line, cell=None):
     print("Then call %setRamadda with the new Case Study URL");
 
 
-def loadData(line, cell=None):
+def loadData(line, cell=None, name = None):
     extra1 = "";
     extra2 = "";
+    if name  is not None:
+        extra1 += ' name="' + name +'" ';
     isl = '<isl>\n<datasource url="' + line +'" ' + extra1 +'/>' + extra2 +'\n</isl>';
     if idvCall(cmd_loadisl, {"isl": isl}) == None:
         print("loadData failed");
@@ -539,7 +541,7 @@ def listRamadda(entryId):
     baseName =  toks[0];
     baseName  = baseName.replace("_comma_",",");
     icon =  toks[1];
-    csv = readUrl(ramaddaBase+"/entry/show?entryid=" + entryId +"&output=default.csv&escapecommas=true&fields=name,id,type,icon,url");
+    csv = readUrl(ramaddaBase+"/entry/show?entryid=" + entryId +"&output=default.csv&escapecommas=true&fields=name,id,type,icon,url&orderby=name");
     listCsv("<b>" + "<img src=" + ramaddaHost + icon+"> " + "<a target=ramadda href=" +ramaddaBase +"/entry/show?entryid=" + entryId +">" + baseName+"</a></b><br>", csv);
 
 
@@ -580,11 +582,12 @@ def listCsv(label, csv):
                     b  = makeButton("Load bundle",loadBundleClicked);
                     b.url  = ramaddaBase +"/entry/get?entryid=" + id;
                     row.append(b);
-                elif type == "cdm_grid" or name.endswith(".nc") :
+                elif type == "cdm_grid" or fullName.endswith(".nc") :
                     b  = makeButton("Load data",loadDataClicked);
+                    b.name =fullName;
                     b.entryid  = id;
                     row.append(b);
-                elif type=="type_drilsdown_casestudy" or type=="group":
+                elif type=="type_drilsdown_casestudy" or type=="group" or type=="localfiles":
                     b  = makeButton("List",listRamaddaClicked);
                     b.entryid = id;
                     loadCatalog  = makeButton("Load Catalog",loadCatalogClicked);
