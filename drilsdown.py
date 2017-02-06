@@ -151,9 +151,9 @@ def handleSearch(widget):
     type = widget.type;
     value  =  widget.value.replace(" ","%20");
     if type == "":
-        url = ramaddaBase +"/search/do?output=default.csv&escapecommas=true&fields=name,id,type,icon,url&orderby=name&text=" + value;
+        url = ramaddaBase +"/search/do?output=default.csv&escapecommas=true&fields=name,id,type,icon,url,size&orderby=name&text=" + value;
     else:
-        url = ramaddaBase +"/search/type/" + type +"?output=default.csv&escapecommas=true&orderby=name&fields=name,id,type,icon,url&text=" + value;    
+        url = ramaddaBase +"/search/type/" + type +"?output=default.csv&escapecommas=true&orderby=name&fields=name,id,type,icon,url,size&text=" + value;    
     csv = readUrl(url);
     listCsv("<b>Search Results:</b> " + widget.value +" <br>", csv);
 
@@ -541,7 +541,7 @@ def listRamadda(entryId):
     baseName =  toks[0];
     baseName  = baseName.replace("_comma_",",");
     icon =  toks[1];
-    csv = readUrl(ramaddaBase+"/entry/show?entryid=" + entryId +"&output=default.csv&escapecommas=true&fields=name,id,type,icon,url&orderby=name");
+    csv = readUrl(ramaddaBase+"/entry/show?entryid=" + entryId +"&output=default.csv&escapecommas=true&fields=name,id,type,icon,url,size&orderby=name");
     listCsv("<b>" + "<img src=" + ramaddaHost + icon+"> " + "<a target=ramadda href=" +ramaddaBase +"/entry/show?entryid=" + entryId +">" + baseName+"</a></b><br>", csv);
 
 
@@ -557,7 +557,8 @@ def listCsv(label, csv):
         if cnt > 100:
             break;
         if i > 0:
-            line2 =  lines[i].split(",");
+            line2 = lines[i];
+            line2 =  line2.split(",");
             if len(line2)>=5:
                 cnt = cnt+1;
                 name = line2[0];
@@ -566,7 +567,6 @@ def listCsv(label, csv):
                 type = line2[2];
                 icon = line2[3];
                 url = line2[4];
-                
                 fullName = name;
                 maxLength  = 25;
                 if len(name)>maxLength:
@@ -582,6 +582,8 @@ def listCsv(label, csv):
                     b  = makeButton("Load bundle",loadBundleClicked);
                     b.url  = ramaddaBase +"/entry/get?entryid=" + id;
                     row.append(b);
+                    link = ramaddaBase +"/entry/show/?output=idv.islform&entryid=" + id;
+                    row.append(HTML('<a target=ramadda href="' + link +'">Subset Bundle</a>'));
                 elif type == "cdm_grid" or fullName.endswith(".nc") :
                     b  = makeButton("Load data",loadDataClicked);
                     b.name =fullName;
@@ -600,6 +602,13 @@ def listCsv(label, csv):
                     b.name = name;
                     row.append(b);
                     
+                try:
+                    fileSize = line2[5];
+                    if float(fileSize)>0:
+                        link = ramaddaBase +"/entry/get?entryid=" + id;
+                        row.append(HTML('&nbsp;&nbsp;<a target=ramadda href="' + link+'">Download (' + fileSize +' bytes) </a>'));
+                except:
+                    print("bad line:" + line2[5]);
                 rows.append(HBox(row));
 
     doDisplay(VBox(rows));
