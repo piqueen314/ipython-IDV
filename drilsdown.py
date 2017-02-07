@@ -130,7 +130,11 @@ def idvPing():
         return None;
 
 def readUrl(url):
-    return urlopen(url).read().decode("utf-8");
+    try:
+        return urlopen(url).read().decode("utf-8");
+    except:
+        print("Error reading url:" + url);
+    
 
 
 def makeButton(label, callback, extra=None):
@@ -507,6 +511,9 @@ def setCaseStudy(line, cell=None):
 
 ##The arg should be the normal /entry/view URL for a RAMADDA entry
 def setRamadda(line, cell=None):
+    lineToks  = line.split(" ");
+    shouldList =  len(lineToks)==1;
+    line = lineToks[0];
     toks = urlparse(line);
     global ramaddaBase;
     global ramaddaEntryId;
@@ -517,7 +524,8 @@ def setRamadda(line, cell=None):
     path = re.sub("/entry.*","", toks.path);
     ramaddaBase += path;
     ramaddaEntryId = re.search("entryid=([^&]+)", toks.query).group(1);
-    listRamadda(ramaddaEntryId);
+    if shouldList:
+        listRamadda(ramaddaEntryId);
 
 
 
@@ -694,5 +702,13 @@ def load_ipython_extension(shell):
     shell.register_magic_function(publishNotebook, magicType);
 
 
+
+
+
 makeUI("");
+
+        
+
+
+        
 
