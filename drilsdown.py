@@ -457,7 +457,7 @@ class Idv:
 
 #NOTE: Don't call idvCall here because idvCall calls runIdv which calls ping
         try:
-            return  urlopen(idvBaseUrl +cmd_ping).read();
+            return  urlopen(Idv.idvBaseUrl +Idv.cmd_ping).read();
         except:
             return None;
 
@@ -496,7 +496,7 @@ class Idv:
         runIdv();
 #TODO: add better error handling 
         try:
-            url = idvBaseUrl +command;
+            url = Idv.idvBaseUrl +command;
             if args:
                 url += "?" + urlencode(args);
             if idvDebug:
@@ -513,7 +513,7 @@ class Idv:
         if name  is not None:
             extra1 += ' name="' + name +'" ';
             isl = '<isl>\n<datasource url="' + url +'" ' + extra1 +'/>' + extra2 +'\n</isl>';
-        if Idv.idvCall(cmd_loadisl, {"isl": isl}) == None:
+        if Idv.idvCall(Idv.cmd_loadisl, {"isl": isl}) == None:
             print("loadData failed");
             return;
         print("data loaded");
@@ -524,7 +524,7 @@ class Idv:
         file = os.getcwd() + "/" + filename;
         isl = '<isl><publish file="'  + file +'"/></isl>';
         print("Check your IDV to publish the file");
-        result  = Idv.idvCall(cmd_loadisl, {"isl": isl});
+        result  = Idv.idvCall(Idv.cmd_loadisl, {"isl": isl});
         if result  == None:
             print("publish failed");
             return;
@@ -542,8 +542,7 @@ class Idv:
         else:
             url = url.replace("&","&amp;");
         isl = '<isl>\n<loadcatalog url="' + url+'"/></isl>';
-        print(isl);
-        if Idv.idvCall(cmd_loadisl, {"isl": isl}) == None:
+        if Idv.idvCall(Idv.cmd_loadisl, {"isl": isl}) == None:
             print("loadCatalog failed");
             return;
 
@@ -556,7 +555,7 @@ class Idv:
         if publish:
             extra +=' publish="true" '
         isl = '<isl><save file="' + filename +'"' + extra +'/></isl>';
-        result = Idv.idvCall(cmd_loadisl, {"isl": isl});
+        result = Idv.idvCall(Idv.cmd_loadisl, {"isl": isl});
         if result == None:
             print("save failed");
             return;
@@ -580,7 +579,7 @@ class Idv:
             east = float(bbox[3])+padding;
             extra2 += '<pause/><center north="' + repr(north) +'" west="' + repr(west) +'" south="'  + repr(south) +'" east="' + repr(east) +'" />';
         isl = '<isl>\n<bundle file="' + bundleUrl +'" ' + extra1 +'/>' + extra2 +'\n</isl>';
-        if Idv.idvCall(cmd_loadisl, {"isl": isl}) == None:
+        if Idv.idvCall(Idv.cmd_loadisl, {"isl": isl}) == None:
             print("loadBundle failed");
             return;
         print("bundle loaded");
@@ -589,7 +588,7 @@ class Idv:
     def publishBundle(filename):
         extra = " publish=\"true\" ";
         isl = '<isl><save file="' + filename +'"' + extra +'/></isl>';
-        result = Idv.idvCall(cmd_loadisl, {"isl": isl});
+        result = Idv.idvCall(Idv.cmd_loadisl, {"isl": isl});
         if result == None:
             print("save failed");
             return;
@@ -610,7 +609,7 @@ class Idv:
             extra += ' publish="true" ';
         with NamedTemporaryFile(suffix='.gif') as f:
             isl = '<isl><movie file="' + f.name + '"' + extra +'/></isl>';
-            result  = Idv.idvCall(cmd_loadisl, {"isl": isl});
+            result  = Idv.idvCall(Idv.cmd_loadisl, {"isl": isl});
             if result == None:
                 print("makeMovie failed");
                 return;
@@ -638,7 +637,7 @@ class Idv:
             extra2 +=    '<matte space="1"  background="black"/>';
         with NamedTemporaryFile(suffix='.png') as f:
             isl = '<isl><image combine="true" file="' + f.name +'"' + extra +'>' + extra2  +'</image></isl>';
-            result = Idv.idvCall(cmd_loadisl, {"isl": isl});
+            result = Idv.idvCall(Idv.cmd_loadisl, {"isl": isl});
             if result == None:
                 print("makeImage failed");
                 return;
