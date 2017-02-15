@@ -161,13 +161,11 @@ def makeMovie(line, cell=None):
 
 def setRamadda(line, cell=None):
     """Set the ramadda to be used. The arg should be the normal /entry/view URL for a RAMADDA entry"""
-    global theRamadda;
     lineToks  = line.split(" ");
     shouldList =  len(lineToks)==1;
     line = lineToks[0];
-    theRamadda = Ramadda(line);
-    if shouldList:
-        listRamadda(theRamadda.entryId);
+    Ramadda.setRamadda(line, shouldList);
+
 
 
 def listRamadda(entryId):
@@ -394,7 +392,7 @@ class DrilsdownUI:
         loadCatalog(b.url);
 
     def ramaddaSelectorChanged(s):
-        setRamadda(s['new']);
+        Ramadda.setRamadda(s['new']);
 
 
     def clearClicked(b):
@@ -477,7 +475,7 @@ class Idv:
         extra2 = "";
         if name  is not None:
             extra1 += ' name="' + name +'" ';
-            isl = '<isl>\n<datasource url="' + url +'" ' + extra1 +'/>' + extra2 +'\n</isl>';
+        isl = '<isl>\n<datasource url="' + url +'" ' + extra1 +'/>' + extra2 +'\n</isl>';
         if Idv.idvCall(Idv.cmd_loadisl, {"isl": isl}) == None:
             print("loadData failed");
             return;
@@ -627,6 +625,14 @@ class Ramadda:
         toks =  readUrl(self.makeUrl("/entry/show?output=entry.csv&escapecommas=true&fields=name,icon&entryid=" + self.entryId)).split("\n")[1].split(",");
         self.name =   toks[0].replace("_comma_",",");
         self.icon =  toks[1];
+
+    def setRamadda(url, shouldList=True):
+        """Set the ramadda to be used. The arg should be the normal /entry/view URL for a RAMADDA entry"""
+        global theRamadda;
+        theRamadda = Ramadda(url);
+        if shouldList:
+            listRamadda(theRamadda.entryId);
+
 
     def getName(self):
         return self.name;
