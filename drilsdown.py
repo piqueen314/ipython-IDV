@@ -4,7 +4,7 @@
 # Copy this into
 # ~/.ipython/extensions/
 # In the ipython shell to see the available commands do:
-# %idvHelp
+#%load_ext drisldown
 #
 # This needs to have IDV_HOME pointing to the IDV install directory
 # This will execute IDV_HOME/runIdv
@@ -21,16 +21,12 @@ from IPython.display import Image;
 from IPython.display import IFrame;
 from IPython.display import display;
 from IPython.display import clear_output;
-
 from tempfile import NamedTemporaryFile;
 from IPython.display import FileLink;
 import time;
 from IPython import get_ipython;
-
 from ipywidgets import *;
 import ipywidgets as widgets;
-
-
 
 try:
     from urllib.request import urlopen
@@ -46,8 +42,6 @@ idvDebug = 0;
 bbox = None;
 displayedItems = [];
 
-
-
 def doDisplay(comp):
     """Call this to display a component that can later be cleared with the Clear button"""
     global displayedItems;
@@ -55,9 +49,6 @@ def doDisplay(comp):
     displayedItems.append(comp);
 
 
-def runIdv(line = None, cell=None):
-    """Magic hook to start the IDV"""
-    Idv.runIdv();
 
 def readUrl(url):
     """Utility to read a URL. Returns the text of the result"""
@@ -66,203 +57,8 @@ def readUrl(url):
     except:
         print("Error reading url:" + url);
 
-def makeButton(label, callback, extra=None):
-    """Utility to make a button widget"""
-    b = widgets.Button(
-        description=label,
-        disabled=False,
-        button_style='', # 'success', 'info', 'warning', 'danger' or ''
-        tooltip=label,
-        )
-    b.extra  = extra;
-    b.on_click(callback);
-    return b;
 
 
-
-def makeUI(line):
-    global ramaddas;
-    nameMap = {};
-    first = None;
-    for i in range(len(ramaddas)):
-        ramadda = ramaddas[i];
-        if i == 0:
-            first = ramadda.url;
-        nameMap[ramadda.name] =  ramadda.url;
-
-    textLayout=Layout(width='150px');
-    ramaddaSelector = widgets.Dropdown(
-        options=nameMap,
-##        value=first,
-        );
-
-    search = widgets.Text(
-        layout=textLayout,
-    value='',
-    placeholder='IDV bundle',
-    description='',
-    disabled=False)
-    search.on_submit(handleSearch);
-    search.type = "type_idv_bundle";
-
-    cssearch = widgets.Text(
-    value='',
-        layout=textLayout,
-    placeholder='Case study',
-    description='',
-    disabled=False)
-    cssearch.on_submit(handleSearch);
-    cssearch.type = "type_drilsdown_casestudy";
-
-
-    gridsearch = widgets.Text(
-    value='',
-        layout=textLayout,
-    placeholder='Gridded data',
-    description='',
-    disabled=False)
-    gridsearch.on_submit(handleSearch);
-    gridsearch.type = "cdm_grid";
-
-    allsearch = widgets.Text(
-    value='',
-        layout=textLayout,
-    placeholder='All',
-    description='',
-    disabled=False)
-    allsearch.on_submit(handleSearch);
-    allsearch.type = "";
-
-
-    listBtn = makeButton("List",listRamaddaClicked);
-    listBtn.entryid = "";
-    
-    cbx = widgets.Checkbox(
-        value=False,
-        description='Publish',
-        disabled=False);
-
-    lonRange = widgets.FloatRangeSlider(
-        value=[-180, 180],
-        min=-180,
-        max=180.0,
-        step=1.0,
-        description='Lon:',
-        disabled=False,
-        continuous_update=False,
-        orientation='horizontal',
-        readout=True,
-        readout_format='i',
-        slider_color='white',
-        color='black'
-        )
-
-
-    latRange = widgets.FloatRangeSlider(
-        value=[-90, 90],
-        min=-90,
-        max=90.0,
-        step=1.0,
-        description='Lat:',
-        disabled=False,
-        continuous_update=False,
-        orientation='horizontal',
-        readout=True,
-        readout_format='i',
-        slider_color='white',
-        color='black'
-        )
-
-
-    ramaddaSelector.observe(ramaddaSelectorChanged,names='value');
-    display(VBox([
-                     HBox([
-                        makeButton("Run IDV",runIDVClicked),
-                      makeButton("Make Image",makeImageClicked, cbx),
-                      makeButton("Make Movie",makeMovieClicked,cbx),
-                      makeButton("Save Bundle",saveBundleClicked,cbx),
-                      cbx]),
-                HBox([
-                      ramaddaSelector,
-                      listBtn,
-                      makeButton("Clear",clearClicked),
-                      makeButton("Help",idvHelp)]),
-##                HBox([lonRange, latRange]),
-                HBox([Label("Search for:"), search,
-                      cssearch, gridsearch, allsearch]),
-                
-]));
-
-
-##
-##The button callbacks
-##
-
-def handleSearch(widget):
-    global theRamadda;
-    type = widget.type;
-    value  =  widget.value.replace(" ","%20");
-    entries = theRamadda.doSearch(value, type);
-    theRamadda.displayEntries("<b>Search Results:</b> " + widget.value +" <br>", entries);
-
-
-
-def reloadClicked(b):
-    ipython = get_ipython();
-    ipython.magic("reload_ext drilsdown");
-
-def runIDVClicked(b):
-    runIdv("");
-
-def saveBundleClicked(b):
-    extra = "";
-    if b.extra.value == True:
-        extra = "-publish"
-    saveBundle(extra);
-
-def makeImageClicked(b):
-    extra = "";
-    if b.extra.value:
-        extra = "-publish"
-    makeImage(extra);
-
-def makeMovieClicked(b):
-    extra = "";
-    if b.extra.value:
-        extra = "-publish"
-    makeMovie(extra);
-
-def loadBundleClicked(b):
-    loadBundle(b.url);
-
-def viewUrlClicked(b):
-    doDisplay(HTML("<a target=ramadda href=" + b.url +">" + b.name+"</a>"));
-    display(IFrame(src=b.url,width=800, height=400));
-
-
-def loadDataClicked(b):
-    loadData(b.entry.makeOpendapUrl(), None, b.name);
-
-def listRamaddaClicked(b):
-    global theRamadda;
-    if b.entryid == "":
-        listRamadda(theRamadda.entryId);
-    else:
-        listRamadda(b.entryid);
-
-
-def loadCatalogClicked(b):
-    loadCatalog(b.url);
-
-def ramaddaSelectorChanged(s):
-    setRamadda(s['new']);
-
-
-def clearClicked(b):
-    clear_output();
-    global displayedItems;
-    for i in range(len(displayedItems)):
-        displayedItems[i].close();
 
 
 
@@ -290,12 +86,13 @@ def idvHelp(line, cell=None):
     "setBBOX <north west south east> No arguments to clear the bbox<br></pre>";
     doDisplay(HTML(html));
 
+def runIdv(line = None, cell=None):
+    """Magic hook to start the IDV"""
+    Idv.runIdv();
 
 
 def loadCatalog(line, cell=None):
     Idv.loadCatalog(line);
-
-
 
 def loadBundleMakeImage(line, cell=None):
     loadBundle(line,cell);
@@ -362,7 +159,6 @@ def makeMovie(line, cell=None):
     Idv.makeMovie(publish);
 
 
-
 def setRamadda(line, cell=None):
     """Set the ramadda to be used. The arg should be the normal /entry/view URL for a RAMADDA entry"""
     global theRamadda;
@@ -372,7 +168,6 @@ def setRamadda(line, cell=None):
     theRamadda = Ramadda(line);
     if shouldList:
         listRamadda(theRamadda.entryId);
-
 
 
 def listRamadda(entryId):
@@ -421,8 +216,6 @@ def setBBOX(line, cell=None):
 
 
 
-
-
 def load_ipython_extension(shell):
     """Define the magics"""
     magicType = "line";
@@ -443,7 +236,179 @@ def load_ipython_extension(shell):
 
 
 
+
+def makeUI(line):
+    DrilsdownUI.makeUI();
+
+
+class DrilsdownUI:
+    """Handles all of the UI callbacks """
+    def makeUI():
+        global ramaddas;
+        nameMap = {};
+        first = None;
+        for i in range(len(ramaddas)):
+            ramadda = ramaddas[i];
+            if i == 0:
+                first = ramadda.url;
+            nameMap[ramadda.name] =  ramadda.url;
+
+        textLayout=Layout(width='150px');
+        ramaddaSelector = widgets.Dropdown(
+            options=nameMap,
+            ##        value=first,
+            );
+
+        search = widgets.Text(
+            layout=textLayout,
+            value='',
+            placeholder='IDV bundle',
+            description='',
+            disabled=False)
+
+        search.on_submit(DrilsdownUI.handleSearch);
+        search.type = "type_idv_bundle";
+
+        cssearch = widgets.Text(
+            value='',
+            layout=textLayout,
+            placeholder='Case study',
+            description='',
+            disabled=False)
+        cssearch.on_submit(DrilsdownUI.handleSearch);
+        cssearch.type = "type_drilsdown_casestudy";
+
+
+        gridsearch = widgets.Text(
+            value='',
+            layout=textLayout,
+            placeholder='Gridded data',
+            description='',
+            disabled=False)
+        gridsearch.on_submit(DrilsdownUI.handleSearch);
+        gridsearch.type = "cdm_grid";
+
+        allsearch = widgets.Text(
+            value='',
+            layout=textLayout,
+            placeholder='All',
+            description='',
+            disabled=False)
+        allsearch.on_submit(DrilsdownUI.handleSearch);
+        allsearch.type = "";
+
+        listBtn = DrilsdownUI.makeButton("List",DrilsdownUI.listRamaddaClicked);
+        listBtn.entryid = "";
+    
+        cbx = widgets.Checkbox(
+            value=False,
+            description='Publish',
+            disabled=False);
+
+        ramaddaSelector.observe(DrilsdownUI.ramaddaSelectorChanged,names='value');
+        display(VBox([
+                    HBox([
+                            DrilsdownUI.makeButton("Run IDV",DrilsdownUI.runIDVClicked),
+                            DrilsdownUI.makeButton("Make Image",DrilsdownUI.makeImageClicked, cbx),
+                            DrilsdownUI.makeButton("Make Movie",DrilsdownUI.makeMovieClicked,cbx),
+                            DrilsdownUI.makeButton("Save Bundle",DrilsdownUI.saveBundleClicked,cbx),
+                            cbx]),
+                    HBox([
+                            ramaddaSelector,
+                            listBtn,
+                            DrilsdownUI.makeButton("Clear",DrilsdownUI.clearClicked),
+                            DrilsdownUI.makeButton("Help",idvHelp)]),
+                    HBox([Label("Search for:"), search,
+                          cssearch, gridsearch, allsearch]),
+                
+                    ]));
+
+
+    def makeButton(label, callback, extra=None):
+        """Utility to make a button widget"""
+        b = widgets.Button(
+            description=label,
+            disabled=False,
+            button_style='', # 'success', 'info', 'warning', 'danger' or ''
+            tooltip=label,
+            )
+        b.extra  = extra;
+        b.on_click(callback);
+        return b;
+
+
+    def handleSearch(widget):
+        global theRamadda;
+        type = widget.type;
+        value  =  widget.value.replace(" ","%20");
+        entries = theRamadda.doSearch(value, type);
+        theRamadda.displayEntries("<b>Search Results:</b> " + widget.value +" <br>", entries);
+
+    def runIDVClicked(b):
+        runIdv("");
+
+    def saveBundleClicked(b):
+        extra = "";
+        if b.extra.value == True:
+            extra = "-publish"
+        saveBundle(extra);
+
+    def makeImageClicked(b):
+        extra = "";
+        if b.extra.value:
+            extra = "-publish"
+        makeImage(extra);
+
+    def makeMovieClicked(b):
+        extra = "";
+        if b.extra.value:
+            extra = "-publish"
+        makeMovie(extra);
+
+    def loadBundleClicked(b):
+        loadBundle(b.url);
+
+    def viewUrlClicked(b):
+        doDisplay(HTML("<a target=ramadda href=" + b.url +">" + b.name+"</a>"));
+        display(IFrame(src=b.url,width=800, height=400));
+
+
+    def loadDataClicked(b):
+        loadData(b.entry.makeOpendapUrl(), None, b.name);
+
+
+    def setDataClicked(b):
+        url  = b.entry.makeOpendapUrl();
+        Idv.dataUrl = url;
+        print("To access the data use the variable: Idv.dataUrl");
+
+    def listRamaddaClicked(b):
+        global theRamadda;
+        if b.entryid == "":
+            listRamadda(theRamadda.entryId);
+        else:
+            listRamadda(b.entryid);
+
+
+    def loadCatalogClicked(b):
+        loadCatalog(b.url);
+
+    def ramaddaSelectorChanged(s):
+        setRamadda(s['new']);
+
+
+    def clearClicked(b):
+        clear_output();
+        global displayedItems;
+        for i in range(len(displayedItems)):
+            displayedItems[i].close();
+
+
+
+
 class Idv:
+    dataUrl = "";
+
 #These correspond to the commands in ucar.unidata.idv.IdvMonitor
     cmd_ping = "/ping";
     cmd_loadisl = "/loadisl";
@@ -660,8 +625,7 @@ class Ramadda:
         self.base += path;
         self.entryId = re.search("entryid=([^&]+)", toks.query).group(1);
         toks =  readUrl(self.makeUrl("/entry/show?output=entry.csv&escapecommas=true&fields=name,icon&entryid=" + self.entryId)).split("\n")[1].split(",");
-        self.name =   toks[0];
-        self.name  = self.name.replace("_comma_",",");
+        self.name =   toks[0].replace("_comma_",",");
         self.icon =  toks[1];
 
     def getName(self):
@@ -671,10 +635,12 @@ class Ramadda:
         return self.base;
 
     def doList(self, entryId):
+        """make a list of RamaddaEntry objects that are children of the given entryId"""
         csv = readUrl(self.makeUrl("/entry/show?entryid=" + entryId +"&output=default.csv&escapecommas=true&fields=name,id,type,icon,url,size&orderby=name"));
         return self.makeEntries(csv);
 
     def doSearch(self, value, type=None):
+        """Do a search for the text value and (optionally) the entry type. Return a list of RamaddaEntry objects"""
         entries =[];
         if type == None or type=="":
             url = self.makeUrl("/search/do?output=default.csv&escapecommas=true&fields=name,id,type,icon,url,size&orderby=name&text=" + value);
@@ -685,6 +651,7 @@ class Ramadda:
 
 
     def makeEntries(self, csv):
+        """Convert the RAMADDA csv into a list of RamaddaEntry objects """
         entries =[];
         lines =  csv.split("\n");
         cnt = 0;
@@ -712,8 +679,8 @@ class Ramadda:
 
     
     def makeUrl(self,path):
+        """Add the ramadda base path to the given url path"""
         return self.base + path;
-
 
 
     def makeEntryHref(self, entryId, name, icon = None, alt = ""):
@@ -751,25 +718,28 @@ class Ramadda:
             id = entry.getId();
             type = entry.getType();
             if entry.isBundle():
-                b  = makeButton("Load bundle",loadBundleClicked);
+                b  = DrilsdownUI.makeButton("Load bundle",DrilsdownUI.loadBundleClicked);
                 b.url  = self.makeUrl("/entry/get?entryid=" + id)
                 row.append(b);
                 link = self.makeUrl("/entry/show/?output=idv.islform&entryid=" + id);
                 row.append(HTML('<a target=ramadda href="' + link +'">Subset Bundle</a>'));
             elif entry.isGrid():
-                b  = makeButton("Load data",loadDataClicked);
+                b  = DrilsdownUI.makeButton("Load data",DrilsdownUI.loadDataClicked);
                 b.name =fullName;
                 b.entry  = entry;
                 row.append(b);
+                b  = DrilsdownUI.makeButton("Set data",DrilsdownUI.setDataClicked);
+                b.entry  = entry;
+                row.append(b);
             elif entry.isGroup():
-                b  = makeButton("List",listRamaddaClicked);
+                b  = DrilsdownUI.makeButton("List",DrilsdownUI.listRamaddaClicked);
                 b.entryid = id;
-                loadCatalog  = makeButton("Load Catalog",loadCatalogClicked);
+                loadCatalog  = DrilsdownUI.makeButton("Load Catalog",DrilsdownUI.loadCatalogClicked);
                 loadCatalog.url = self.makeUrl("/entry/show?output=thredds.catalog&entryid=" + id);
                 row.append(b);
                 row.append(loadCatalog);
             else:
-                b  = makeButton("View",viewUrlClicked);
+                b  = DrilsdownUI.makeButton("View",DrilsdownUI.viewUrlClicked);
                 b.url = self.makeUrl("/entry/show?entryid=" + id);
                 b.name = name;
                 row.append(b);
