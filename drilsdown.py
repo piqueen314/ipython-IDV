@@ -378,7 +378,12 @@ class DrilsdownUI:
     def setDataClicked(b):
         url  = b.entry.makeOpendapUrl();
         Idv.dataUrl = url;
-        print("To access the data use the variable: Idv.dataUrl");
+        print('To access the data use the variable: Idv.dataUrl or:\n' + url);
+
+    def setUrlClicked(b):
+        url  = b.entry.makeGetFileUrl();
+        Idv.fileUrl = url;
+        print('To access the URL use the variable: Idv.fileUrl or:\n' + url);
 
     def listRamaddaClicked(b):
         global theRamadda;
@@ -406,6 +411,7 @@ class DrilsdownUI:
 
 class Idv:
     dataUrl = "";
+    fileUrl = "";
 
 #These correspond to the commands in ucar.unidata.idv.IdvMonitor
     cmd_ping = "/ping";
@@ -532,7 +538,7 @@ class Idv:
         extra1 = "";
         extra2 = "";
         if bbox is not None:
-            extra1 += 'bbox="' + bbox[0] +"," +bbox[1] +"," + bbox[2] +"," + bbox[3] +'"';
+            extra1 += 'bbox="' + repr(bbox[0]) +"," +repr(bbox[1]) +"," + repr(bbox[2]) +"," + repr(bbox[3]) +'"';
         ##The padding is to reset the viewpoint to a bit larger area than the bbox
             padding = (float(bbox[0]) - float(bbox[2]))*0.1;
             north = float(bbox[0])+padding;
@@ -545,7 +551,7 @@ class Idv:
         if Idv.idvCall(Idv.cmd_loadisl, {"isl": isl}) == None:
             print("loadBundle failed");
             return;
-        print("bundle loaded");
+##        print("bundle loaded");
 
 
     def publishBundle(filename):
@@ -725,7 +731,11 @@ class Ramadda:
             type = entry.getType();
             if entry.isBundle():
                 b  = DrilsdownUI.makeButton("Load bundle",DrilsdownUI.loadBundleClicked);
+                b.entry = entry;
                 b.url  = self.makeUrl("/entry/get?entryid=" + id)
+                row.append(b);
+                b  = DrilsdownUI.makeButton("Set URL",DrilsdownUI.setUrlClicked);
+                b.entry = entry;
                 row.append(b);
                 link = self.makeUrl("/entry/show/?output=idv.islform&entryid=" + id);
                 row.append(HTML('<a target=ramadda href="' + link +'">Subset Bundle</a>'));
@@ -801,6 +811,9 @@ class RamaddaEntry:
     def makeOpendapUrl(self):
         return  self.ramadda.base +"/opendap/" + self.id +"/entry.das";
 
+    def makeGetFileUrl(self):
+        return  self.ramadda.base +"/entry/get?entryid=" + self.id;
+
 
 ##Make the RAMADDAS
 ramaddas  =[Ramadda("http://weather.rsmas.miami.edu/repository/entry/show?entryid=45e3b50b-dbe2-408b-a6c2-2c009749cd53"),
@@ -811,8 +824,6 @@ theRamadda = ramaddas[0];
 
 
 makeUI("");
-
-
 
         
 
