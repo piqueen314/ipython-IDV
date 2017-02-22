@@ -36,3 +36,16 @@ The [drilsdownplugin.jar](https://github.com/Unidata/ipython-IDV/blob/master/dri
 
 
 
+<h2>Examples</h2>
+Here is an example of how to use the API to load an IDV bundle with different bounding boxes and capture images
+
+<pre>
+from drilsdown import Idv
+Idv.fileUrl="http://geodesystems.com/repository/entry/get?entryid=d83e0924-008d-4025-9517-394e9f13712f"
+bboxes = [[40,-110,30,-100],[50,-120,20,-100],[60,-120,30,-90]]
+for i in range(len(bboxes)):
+    bbox=bboxes[i];
+    Idv.loadBundle(Idv.fileUrl,bbox)
+    Idv.makeImage(caption="BBOX:" + repr(bbox[0]) +"/" + repr(bbox[1]) +"  " + repr(bbox[2]) +"/" + repr(bbox[3]))
+</pre>
+
