@@ -17,6 +17,13 @@ When you run the iPython notebook do:
 %load_ext drilsdown
 </pre>
 
+If you are writing code you can also import the Idv and Ramadda classes:
+
+<pre>
+from drilsdown import Idv
+from drilsdown import Ramadda
+</pre>
+
 You should see an initial user interface including a link to the help section.
 
 To run the IDV commands you need to have the latest [IDV version 5.3u1](http://www.unidata.ucar.edu/software/idv/nightly/) or above and set IDV_HOME environment variable to the IDV install directory. The python will run:
@@ -41,11 +48,49 @@ Here is an example of how to use the API to load an IDV bundle with different bo
 
 <pre>
 from drilsdown import Idv
+from drilsdown import Ramadda
+Ramadda.setRamadda("http://geodesystems.com/repository/entry/show?entryid=12704a38-9a06-4989-aac4-dafbbe13a675")
 Idv.fileUrl="http://geodesystems.com/repository/entry/get?entryid=d83e0924-008d-4025-9517-394e9f13712f"
-bboxes = [[40,-110,30,-100],[50,-120,20,-100],[60,-120,30,-90]]
+bboxes = [[50,-130,40,-100],[50,-100,40,-75],[40,-130,20,-100],[40,-100,20,-75]]
 for i in range(len(bboxes)):
     bbox=bboxes[i];
     Idv.loadBundle(Idv.fileUrl,bbox)
     Idv.makeImage(caption="BBOX:" + repr(bbox[0]) +"/" + repr(bbox[1]) +"  " + repr(bbox[2]) +"/" + repr(bbox[3]))
 </pre>
+
+
+<pre>
+from drilsdown import Idv
+from drilsdown import Ramadda
+Ramadda.setRamadda("http://geodesystems.com/repository/entry/show?entryid=12704a38-9a06-4989-aac4-dafbbe13a675")
+Idv.fileUrl="http://geodesystems.com/repository/entry/get?entryid=d83e0924-008d-4025-9517-394e9f13712f"
+bboxes = [[50,-130,40,-100],[50,-100,40,-75],[40,-130,20,-100],[40,-100,20,-75]]
+for i in range(len(bboxes)):
+    bbox=bboxes[i];
+    Idv.loadBundle(Idv.fileUrl,bbox);
+    label = "BBOX:" + repr(bbox[0]) +"/" + repr(bbox[1]) +"  " + repr(bbox[2]) +"/" + repr(bbox[3]);
+    Idv.makeMovie(caption=label,display=True, publish={'parent':'9adf32b5-aad4-4a8d-997e-216b9757d240',"name":"Image #" + repr(i)})
+</pre>
+
+
+
+
+The makeImage can take one of 2 forms of a publish argument. The first is a boolean and will result in the IDV popping up its RAMADDA publish dialog box where the image can be published.
+<pre>
+    Idv.makeImage(caption=label, publish=True);
+</pre>
+
+In the second form the publish argument is a map. This directs the python to do the publishing directly to RAMADDA. The map can contain a parent member which is the entry id to publish to and a name member which is the entry name. 
+
+<pre>
+    Idv.makeImage(caption=label, publish={'parent':'9adf32b5-aad4-4a8d-997e-216b9757d240',"name":"Image #" + repr(i)})
+</pre>
+
+To enable direct publishing to RAMADDA you need to have your RAMADDA user name and password defined as environment variables:
+
+<pre>
+export RAMADDA_USER=
+export RAMADDA_PASSWORD=
+</pre>
+
 
