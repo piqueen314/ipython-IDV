@@ -27,6 +27,9 @@ import time;
 from IPython import get_ipython;
 from ipywidgets import *;
 import ipywidgets as widgets;
+from  zipfile import *;
+import requests;
+import xml.etree.ElementTree
 
 try:
     from urllib.request import urlopen
@@ -99,8 +102,7 @@ def loadBundleMakeImage(line, cell=None):
     return makeImage(line,cell);
 
 def createCaseStudy(line, cell=None):
-    global theRamadda;
-    url = theRamadda.makeUrl("/entry/form?parentof=" + theRamadda.entryId +"&type=type_drilsdown_casestudy&name=" + line);
+    url = Ramadda.theRamadda.makeUrl("/entry/form?parentof=" + Ramadda.theRamadda.entryId +"&type=type_drilsdown_casestudy&name=" + line);
     url = url.replace(" ","%20");
     print ("Go to this link to create the Case Study:");
     print (url);
@@ -113,10 +115,9 @@ def loadData(line, cell=None, name = None):
 
 def loadBundle(line, cell=None):
     global bbox;
-    global theRamadda;
     if line == None or line == "":
-        if theRamadda is not None:
-            line = theRamadda.makeUrl("/drilsdown/getbundle?entryid=" + theRamadda.entryId);
+        if Ramadda.theRamadda is not None:
+            line = Ramadda.theRamadda.makeUrl("/drilsdown/getbundle?entryid=" + Ramadda.theRamadda.entryId);
 
     if line == None or line == "":
         print ("No bundle argument provided");
@@ -136,7 +137,7 @@ def makeImage(line, cell=None):
             continue;
         tok  = toks[i];
         if tok == "-publish":
-            publish = true;
+            publish = True;
         elif tok == "-caption":
             skip = 1;
             caption = toks[i+1];
@@ -164,19 +165,18 @@ def setRamadda(line, cell=None):
     lineToks  = line.split(" ");
     shouldList =  len(lineToks)==1;
     line = lineToks[0];
-    Ramadda.setRamadda(line, shouldList);
+    return Ramadda.setRamadda(line, shouldList);
 
 
 
 def listRamadda(entryId):
     """List the entries held by the entry id"""
-    global theRamadda;
-    toks =  readUrl(theRamadda.makeUrl("/entry/show?output=entry.csv&escapecommas=true&fields=name,icon&entryid=" + entryId)).split("\n")[1].split(",");
+    toks =  readUrl(Ramadda.theRamadda.makeUrl("/entry/show?output=entry.csv&escapecommas=true&fields=name,icon&entryid=" + entryId)).split("\n")[1].split(",");
     baseName =  toks[0];
     baseName  = baseName.replace("_comma_",",");
     icon =  toks[1];
-    entries = theRamadda.doList(entryId);
-    theRamadda.displayEntries("<b>" + "<img src=" + theRamadda.host + icon+"> " + "<a target=ramadda href=" +theRamadda.base +"/entry/show?entryid=" + entryId +">" + baseName+"</a></b><br>", entries);
+    entries = Ramadda.theRamadda.doList(entryId);
+    Ramadda.theRamadda.displayEntries("<b>" + "<img src=" + Ramadda.theRamadda.host + icon+"> " + "<a target=ramadda href=" +Ramadda.theRamadda.base +"/entry/show?entryid=" + entryId +">" + baseName+"</a></b><br>", entries);
 
 
 def saveBundle(line, cell=None):
@@ -336,11 +336,10 @@ class DrilsdownUI:
 
 
     def handleSearch(widget):
-        global theRamadda;
         type = widget.type;
         value  =  widget.value.replace(" ","%20");
-        entries = theRamadda.doSearch(value, type);
-        theRamadda.displayEntries("<b>Search Results:</b> " + widget.value +" <br>", entries);
+        entries = Ramadda.theRamadda.doSearch(value, type);
+        Ramadda.theRamadda.displayEntries("<b>Search Results:</b> " + widget.value +" <br>", entries);
 
     def runIDVClicked(b):
         runIdv("");
@@ -358,10 +357,10 @@ class DrilsdownUI:
         makeImage(extra);
 
     def makeMovieClicked(b):
-        extra = "";
         if b.extra.value:
-            extra = "-publish"
-        makeMovie(extra);
+            Idv.makeMovie(True);
+        else:
+            Idv.makeMovie(false);
 
     def loadBundleClicked(b):
         loadBundle(b.url);
@@ -386,9 +385,8 @@ class DrilsdownUI:
         print('To access the URL use the variable: Idv.fileUrl or:\n' + url);
 
     def listRamaddaClicked(b):
-        global theRamadda;
         if b.entryid == "":
-            listRamadda(theRamadda.entryId);
+            listRamadda(Ramadda.theRamadda.entryId);
         else:
             listRamadda(b.entryid);
 
@@ -505,9 +503,8 @@ class Idv:
 
 
     def loadCatalog(url = None):
-        global theRamadda;
         if url is not None or url  != "":
-            url = theRamadda.makeUrl("/entry/show?parentof=" + theRamadda.entryId +"&amp;output=thredds.catalog");
+            url = Ramadda.theRamadda.makeUrl("/entry/show?parentof=" + Ramadda.theRamadda.entryId +"&amp;output=thredds.catalog");
         else:
             url = url.replace("&","&amp;");
         isl = '<isl>\n<loadcatalog url="' + url+'"/></isl>';
@@ -571,55 +568,65 @@ class Idv:
 
 
 
-    def makeMovie(publish):
-        extra = "";
-        data ="";
-        if publish:
-            extra += ' publish="true" ';
-        with NamedTemporaryFile(suffix='.gif') as f:
-            isl = '<isl><movie file="' + f.name + '"' + extra +'/></isl>';
-            result  = Idv.idvCall(Idv.cmd_loadisl, {"isl": isl});
-            if result == None:
-                print("makeMovie failed");
-                return;
-            if result != "" and result is not None:
-                print("Publication successful");
-                print("URL: " + result);
+    def makeMovie(publish=False, caption=None, display=True):
+        Idv.makeImageOrMovie(False, publish, caption, display);
 
-            data = open(f.name, "rb").read()
-            data = b64encode(data).decode('ascii');
-            img = '<img src="data:image/gif;base64,{0}">';
-            doDisplay(HTML(img.format(data)));
+    def makeImage(publish=False, caption=None, display=True):
+        Idv.makeImageOrMovie(True, publish, caption, display);
 
-
-
-    def makeImage(publish=False, caption=None):
+    def makeImageOrMovie(image, publish=False, caption=None, display=True):
+        what = "movie";
+        if image:
+            what = "image";
+        selfPublish=False
+        idvPublish = False;
+        parent=None
         extra = "";
         extra2 = "";
-        if publish:
-            extra = " publish=\"true\" ";
+        name = None;
+        ramadda =  Ramadda.theRamadda;
+        if type(publish) is bool:
+            if publish:
+                idvPublish  = True;
+                extra = " publish=\"true\" ";
+        elif publish is not None:
+            selfPublish = True;
+            if 'ramadda' in publish:
+                ramadda = Ramadda(publish['ramadda']);
+            if 'parent' in publish:
+                parent = publish['parent'];
+            else:
+                parent = ramadda.getId();
+            if 'name' in publish:
+                name = publish['name'];
         if caption is not None:
             extra2 +=    '<matte bottom="50" background="white"/>';
             label = caption;
             label = label.replace("-"," ");
             extra2 +=    '<overlay text="' + label +'"  place="LM,0,-10" anchor="LM"  color="black" fontsize="16"/>';
             extra2 +=    '<matte space="1"  background="black"/>';
-        with NamedTemporaryFile(suffix='.png') as f:
-            isl = '<isl><image combine="true" file="' + f.name +'"' + extra +'>' + extra2  +'</image></isl>';
+        if name is None:
+            name = caption;
+        with NamedTemporaryFile(suffix='.gif') as f:
+            isl = '<isl><' + what +' combine="true" file="' + f.name +'"' + extra +'>' + extra2  +'</' + what +'></isl>';
             result = Idv.idvCall(Idv.cmd_loadisl, {"isl": isl});
             if result == None:
-                print("makeImage failed");
+                print("make" + what + " failed");
                 return;
-            if publish:
+            if idvPublish:
                 print("Publication successful");
                 print("URL: " + result);
+            if selfPublish:
+                ramadda.publish(name,file=f.name, parent=parent);
             data = open(f.name, "rb").read()
             data = b64encode(data).decode('ascii');
             img = '<img src="data:image/gif;base64,{0}">';
-            doDisplay(HTML(img.format(data)));
+            if display:
+                doDisplay(HTML(img.format(data)));
 
 
 class Ramadda:
+    theRamadda = None;
     def __init__(self, url):
         self.url = url;
         toks = urlparse(url);
@@ -632,13 +639,16 @@ class Ramadda:
         self.name =   toks[0].replace("_comma_",",");
         self.icon =  toks[1];
 
-    def setRamadda(url, shouldList=True):
+    def setRamadda(url, shouldList=False):
         """Set the ramadda to be used. The arg should be the normal /entry/view URL for a RAMADDA entry"""
-        global theRamadda;
-        theRamadda = Ramadda(url);
+        Ramadda.theRamadda = Ramadda(url);
         if shouldList:
-            listRamadda(theRamadda.entryId);
+            listRamadda(Ramadda.theRamadda.entryId);
+        return  Ramadda.theRamadda;
 
+
+    def getId(self):
+        return self.entryId;
 
     def getName(self):
         return self.name;
@@ -646,10 +656,16 @@ class Ramadda:
     def getBase(self):
         return self.base;
 
-    def doList(self, entryId):
+    def doList(self, entryId = None, display=False, label="Entries"):
         """make a list of RamaddaEntry objects that are children of the given entryId"""
+        if entryId is None:
+            entryId = self.entryId;
         csv = readUrl(self.makeUrl("/entry/show?entryid=" + entryId +"&output=default.csv&escapecommas=true&fields=name,id,type,icon,url,size&orderby=name"));
-        return self.makeEntries(csv);
+        entries = self.makeEntries(csv);
+        if display:
+            self.displayEntries(label, entries);
+        else:
+            return  entries;
 
     def doSearch(self, value, type=None):
         """Do a search for the text value and (optionally) the entry type. Return a list of RamaddaEntry objects"""
@@ -695,6 +711,10 @@ class Ramadda:
         return self.base + path;
 
 
+    def makeEntryUrl(self, entryId):
+        """make a href for the given entry"""
+        return  self.base  +'/entry/show?entryid=' + entryId;
+
     def makeEntryHref(self, entryId, name, icon = None, alt = ""):
         """make a href for the given entry"""
         html = '<a target=ramadda title="' + alt +'" href="' + self.base  +'/entry/show?entryid=' + entryId  + '">' + name +'</a>';
@@ -703,7 +723,7 @@ class Ramadda:
         return html;
 
     
-    def displayEntries(self, label, entries):
+    def displayEntries(self, label="Entries", entries=[]):
         cnt = 0;
         indent = HTML("&nbsp;&nbsp;&nbsp;");
         rows=[HTML(label)];
@@ -770,6 +790,46 @@ class Ramadda:
         if cnt == 0:
             doDisplay(HTML("<b>No entries found</b>"));
 
+    def publish(self, name, file=None, parent=None):
+        if "RAMADDA_USER" not in os.environ:
+            print ("No RAMADDA_USER environment variable set");
+            return;
+
+        if "RAMADDA_PASSWORD" not in os.environ:
+            print ("No RAMADDA_PASSWORD environment variable set");
+            return;
+
+        user = os.environ['RAMADDA_USER'];
+        password = os.environ['RAMADDA_PASSWORD'];
+
+        if parent == None:
+            parent = self.entryId
+
+        extra = "";
+        if file is not None:
+            extra += ' file="' + os.path.basename(file) +'" ';
+        entryXml = '<entry name="' + name +  '" ' + extra +'/>';
+        with NamedTemporaryFile(suffix='.zip') as tmpZip:
+            with ZipFile(tmpZip.name, 'w') as myzip:
+                with NamedTemporaryFile(suffix='.xml') as tmpFile:
+                    entriesFile = open(tmpFile.name, 'w')
+                    entriesFile.write(entryXml);
+                    entriesFile.close();
+                    myzip.write(tmpFile.name,arcname='entries.xml');
+                if file is not None:
+                    myzip.write(file);
+            files = {'file': open(tmpZip.name, 'rb')}
+            ##TODO: change http to https
+            url = self.makeUrl("/entry/xmlcreate");
+            r = requests.post(url, files=files, data = {'group':parent,'auth.user':user,'auth.password': password,'response':'xml'})
+            root = xml.etree.ElementTree.fromstring(r.text);
+            if root.attrib['code'] == 'ok':
+                for child in root:
+                    display(HTML("Published file: " +self.makeEntryHref(child.attrib['id'],name)));
+            else:
+                print('Error publishing file');
+                print(r.text);
+
 
 class RamaddaEntry:
     def __init__(self, ramadda, name, id, type, icon, url, fileSize):
@@ -820,7 +880,7 @@ ramaddas  =[Ramadda("http://weather.rsmas.miami.edu/repository/entry/show?entryi
            Ramadda("http://geodesystems.com/repository/entry/show?entryid=12704a38-9a06-4989-aac4-dafbbe13a675")
 ##            Ramadda("http://motherlode.ucar.edu/repository/entry/show?entryid=0")
 ];
-theRamadda = ramaddas[0];
+Ramadda.theRamadda = ramaddas[0];
 
 
 makeUI("");
