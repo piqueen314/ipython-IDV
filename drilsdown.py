@@ -503,7 +503,7 @@ class Idv:
 
 
     def loadCatalog(url = None):
-        if url is not None or url  != "":
+        if url is  None or url  == "":
             url = Ramadda.theRamadda.makeUrl("/entry/show?parentof=" + Ramadda.theRamadda.entryId +"&amp;output=thredds.catalog");
         else:
             url = url.replace("&","&amp;");
