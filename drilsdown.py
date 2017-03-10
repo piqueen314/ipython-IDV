@@ -360,7 +360,7 @@ class DrilsdownUI:
         if b.extra.value:
             Idv.makeMovie(True);
         else:
-            Idv.makeMovie(false);
+            Idv.makeMovie(False);
 
     def loadBundleClicked(b):
         loadBundle(b.url);
