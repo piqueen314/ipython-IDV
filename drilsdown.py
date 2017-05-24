@@ -3,8 +3,10 @@
 #
 # Copy this into
 # ~/.ipython/extensions/
-# In the ipython shell to see the available commands do:
-#%load_ext drisldown
+# In the ipython shell do:
+#%load_ext drilsdown
+#or
+#%reload_ext drilsdown
 #
 # This needs to have IDV_HOME pointing to the IDV install directory
 # This will execute IDV_HOME/runIdv
@@ -30,11 +32,20 @@ import ipywidgets as widgets;
 from  zipfile import *;
 import requests;
 import xml.etree.ElementTree
+from glob import glob
+from os import listdir
+from os.path import isfile, join
+
+
+
+
+
 
 try:
     from urllib.request import urlopen
-    from urllib.parse import urlparse, urlencode
+    from urllib.parse import urlparse, urlencode, urljoin
 except ImportError:
+    from urlparse import urljoin
     from urlparse import urlparse
     from urllib import urlopen, urlencode
 
@@ -63,6 +74,11 @@ def readUrl(url):
 
 
 
+
+
+
+def testit(line, cell=None):
+    print( os.listdir("."));
 
 
 
@@ -102,7 +118,7 @@ def loadBundleMakeImage(line, cell=None):
     return makeImage(line,cell);
 
 def createCaseStudy(line, cell=None):
-    url = Ramadda.theRamadda.makeUrl("/entry/form?parentof=" + Ramadda.theRamadda.entryId +"&type=type_drilsdown_casestudy&name=" + line);
+    url = Repository.theRepository.makeUrl("/entry/form?parentof=" + Repository.theRepository.entryId +"&type=type_drilsdown_casestudy&name=" + line);
     url = url.replace(" ","%20");
     print ("Go to this link to create the Case Study:");
     print (url);
@@ -116,8 +132,8 @@ def loadData(line, cell=None, name = None):
 def loadBundle(line, cell=None):
     global bbox;
     if line == None or line == "":
-        if Ramadda.theRamadda is not None:
-            line = Ramadda.theRamadda.makeUrl("/drilsdown/getbundle?entryid=" + Ramadda.theRamadda.entryId);
+        if Repository.theRepository is not None:
+            line = Repository.theRepository.makeUrl("/drilsdown/getbundle?entryid=" + Repository.theRepository.entryId);
 
     if line == None or line == "":
         print ("No bundle argument provided");
@@ -165,19 +181,15 @@ def setRamadda(line, cell=None):
     lineToks  = line.split(" ");
     shouldList =  len(lineToks)==1;
     line = lineToks[0];
-    return Ramadda.setRamadda(line, shouldList);
+    Repository.setRepository(Ramadda(line), shouldList);
 
 
 
-def listRamadda(entryId):
+def listRepository(entryId = None, repository=None):
     """List the entries held by the entry id"""
-    toks =  readUrl(Ramadda.theRamadda.makeUrl("/entry/show?output=entry.csv&escapecommas=true&fields=name,icon&entryid=" + entryId)).split("\n")[1].split(",");
-    baseName =  toks[0];
-    baseName  = baseName.replace("_comma_",",");
-    icon =  toks[1];
-    entries = Ramadda.theRamadda.doList(entryId);
-    Ramadda.theRamadda.displayEntries("<b>" + "<img src=" + Ramadda.theRamadda.host + icon+"> " + "<a target=ramadda href=" +Ramadda.theRamadda.base +"/entry/show?entryid=" + entryId +">" + baseName+"</a></b><br>", entries);
-
+    if repository is None:
+        repository = Repository.theRepository;
+    repository.listEntry(entryId);
 
 def saveBundle(line, cell=None):
     extra = "";
@@ -217,6 +229,7 @@ def setBBOX(line, cell=None):
 def load_ipython_extension(shell):
     """Define the magics"""
     magicType = "line";
+    shell.register_magic_function(testit, magicType);
     shell.register_magic_function(idvHelp, magicType);
     shell.register_magic_function(runIdv, magicType);
     shell.register_magic_function(makeUI, magicType);
@@ -241,20 +254,24 @@ def makeUI(line):
 
 class DrilsdownUI:
     """Handles all of the UI callbacks """
+    idToRepository = {};
+
+
     def makeUI():
-        global ramaddas;
+        global repositories;
         nameMap = {};
         first = None;
-        for i in range(len(ramaddas)):
-            ramadda = ramaddas[i];
+        for i in range(len(repositories)):
+            repository = repositories[i];
             if i == 0:
-                first = ramadda.url;
-            nameMap[ramadda.name] =  ramadda.url;
+                first = repository.getId();
+            DrilsdownUI.idToRepository[repository.getId()] = repository;
+            nameMap[repository.getName()] =  repository.getId();
 
         textLayout=Layout(width='150px');
-        ramaddaSelector = widgets.Dropdown(
+        repositorySelector = widgets.Dropdown(
             options=nameMap,
-            ##        value=first,
+            value=first,
             );
 
         search = widgets.Text(
@@ -270,7 +287,7 @@ class DrilsdownUI:
         cssearch = widgets.Text(
             value='',
             layout=textLayout,
-            placeholder='Case study',
+            placeholder='Case study or folder',
             description='',
             disabled=False)
         cssearch.on_submit(DrilsdownUI.handleSearch);
@@ -295,15 +312,15 @@ class DrilsdownUI:
         allsearch.on_submit(DrilsdownUI.handleSearch);
         allsearch.type = "";
 
-        listBtn = DrilsdownUI.makeButton("List",DrilsdownUI.listRamaddaClicked);
-        listBtn.entryid = "";
+        listBtn = DrilsdownUI.makeButton("List",DrilsdownUI.listRepositoryClicked);
+        listBtn.entry = None;
     
         cbx = widgets.Checkbox(
             value=False,
             description='Publish',
             disabled=False);
 
-        ramaddaSelector.observe(DrilsdownUI.ramaddaSelectorChanged,names='value');
+        repositorySelector.observe(DrilsdownUI.repositorySelectorChanged,names='value');
         display(VBox([
                     HBox([
                             DrilsdownUI.makeButton("Run IDV",DrilsdownUI.runIDVClicked),
@@ -312,7 +329,7 @@ class DrilsdownUI:
                             DrilsdownUI.makeButton("Save Bundle",DrilsdownUI.saveBundleClicked,cbx),
                             cbx]),
                     HBox([
-                            ramaddaSelector,
+                            repositorySelector,
                             listBtn,
                             DrilsdownUI.makeButton("Clear",DrilsdownUI.clearClicked),
                             DrilsdownUI.makeButton("Help",idvHelp)]),
@@ -338,8 +355,8 @@ class DrilsdownUI:
     def handleSearch(widget):
         type = widget.type;
         value  =  widget.value.replace(" ","%20");
-        entries = Ramadda.theRamadda.doSearch(value, type);
-        Ramadda.theRamadda.displayEntries("<b>Search Results:</b> " + widget.value +" <br>", entries);
+        entries = Repository.theRepository.doSearch(value, type);
+        Repository.theRepository.displayEntries("<b>Search Results:</b> " + widget.value +" <br>", entries);
 
     def runIDVClicked(b):
         runIdv("");
@@ -363,7 +380,7 @@ class DrilsdownUI:
             Idv.makeMovie(False);
 
     def loadBundleClicked(b):
-        loadBundle(b.url);
+        loadBundle(b.entry.getFilePath());
 
     def viewUrlClicked(b):
         doDisplay(HTML("<a target=ramadda href=" + b.url +">" + b.name+"</a>"));
@@ -371,11 +388,11 @@ class DrilsdownUI:
 
 
     def loadDataClicked(b):
-        loadData(b.entry.makeOpendapUrl(), None, b.name);
+        loadData(b.entry.getDataPath(), None, b.name);
 
 
     def setDataClicked(b):
-        url  = b.entry.makeOpendapUrl();
+        url  = b.entry.getDataPath();
         Idv.dataUrl = url;
         print('To access the data use the variable: Idv.dataUrl or:\n' + url);
 
@@ -384,18 +401,19 @@ class DrilsdownUI:
         Idv.fileUrl = url;
         print('To access the URL use the variable: Idv.fileUrl or:\n' + url);
 
-    def listRamaddaClicked(b):
-        if b.entryid == "":
-            listRamadda(Ramadda.theRamadda.entryId);
+    def listRepositoryClicked(b):
+        if b.entry is None:
+            listRepository(None);
         else:
-            listRamadda(b.entryid);
+            listRepository(b.entry.getId(), b.entry.getRepository());
 
 
     def loadCatalogClicked(b):
         loadCatalog(b.url);
 
-    def ramaddaSelectorChanged(s):
-        Ramadda.setRamadda(s['new']);
+    def repositorySelectorChanged(s):
+        repository = DrilsdownUI.idToRepository[s['new']];
+        Repository.setRepository(repository);
 
 
     def clearClicked(b):
@@ -408,8 +426,8 @@ class DrilsdownUI:
 
 
 class Idv:
-    dataUrl = "";
-    fileUrl = "";
+    dataUrl = None;
+    fileUrl = None;
 
 #These correspond to the commands in ucar.unidata.idv.IdvMonitor
     cmd_ping = "/ping";
@@ -504,7 +522,7 @@ class Idv:
 
     def loadCatalog(url = None):
         if url is  None or url  == "":
-            url = Ramadda.theRamadda.makeUrl("/entry/show?parentof=" + Ramadda.theRamadda.entryId +"&amp;output=thredds.catalog");
+            url = Repository.theRepository.makeUrl("/entry/show?parentof=" + Repository.theRepository.entryId +"&amp;output=thredds.catalog");
         else:
             url = url.replace("&","&amp;");
         isl = '<isl>\n<loadcatalog url="' + url+'"/></isl>';
@@ -532,6 +550,7 @@ class Idv:
 
 
     def loadBundle(bundleUrl, bbox=None):
+        print("bundle: "  + bundleUrl);
         extra1 = "";
         extra2 = "";
         if bbox is not None:
@@ -584,7 +603,7 @@ class Idv:
         extra = "";
         extra2 = "";
         name = None;
-        ramadda =  Ramadda.theRamadda;
+        ramadda =  Repository.theRepository;
         if type(publish) is bool:
             if publish:
                 idvPublish  = True;
@@ -625,7 +644,274 @@ class Idv:
                 doDisplay(HTML(img.format(data)));
 
 
-class Ramadda:
+
+
+class Repository:
+    theRepository = None;
+    def __init__(self, id):
+        self.id = id;
+
+    def setRepository(repository, shouldList=False):
+        """Set the repository to be used. The arg should be the normal /entry/view URL for a REPOSITORY entry"""
+        Repository.theRepository = repository;
+        if shouldList:
+            listRepository(Repository.theRepository.entryId, repository);
+        return  Repository.theRepository;
+
+
+
+
+    def getId(self):
+        return self.entryId;
+
+
+
+
+    def doSearch(self, value, type=None):
+        print("Search not available");
+
+    
+    def displayEntries(self, label="Entries", entries=[]):
+        cnt = 0;
+        indent = HTML("&nbsp;&nbsp;&nbsp;");
+        rows=[HTML(label)];
+        for i in range(len(entries)):
+            if cnt > 100:
+                break;
+            cnt = cnt+1;
+            entry = entries[i];
+            name  = entry.getName();
+            id = entry.getId();
+            icon = entry.getIcon();
+            fullName = name;
+            maxLength  = 25;
+            if len(name)>maxLength:
+                name = name[:maxLength-len(name)];
+            name = name.ljust(maxLength," ");
+            name = name.replace(" ","&nbsp;");
+            row = [];
+            if entry.getUrl() is not None:
+                href = self.makeEntryHref(id,  name, icon, fullName);
+                href  = "<span style=font-family:monospace;>" + href +"</span>";
+                href = HTML(href);
+                row = [indent, href];
+            else:
+                label  = "<span style=font-family:monospace;>" + name +"</span>";
+                row = [indent, HTML(label)];
+
+            if entry.isBundle():
+                b  = DrilsdownUI.makeButton("Load bundle",DrilsdownUI.loadBundleClicked);
+                b.entry = entry;
+                row.append(b);
+                entry.addDisplayWidget(row);
+            elif entry.isGrid():
+                b  = DrilsdownUI.makeButton("Load data",DrilsdownUI.loadDataClicked);
+                b.name =fullName;
+                b.entry  = entry;
+                row.append(b);
+                b  = DrilsdownUI.makeButton("Set data",DrilsdownUI.setDataClicked);
+                b.entry  = entry;
+                row.append(b);
+            elif entry.isGroup():
+                b  = DrilsdownUI.makeButton("List",DrilsdownUI.listRepositoryClicked);
+                b.entry = entry;
+                row.append(b);
+                catalogUrl = entry.getCatalogUrl();
+                if catalogUrl is not None:
+                    loadCatalog  = DrilsdownUI.makeButton("Load Catalog",DrilsdownUI.loadCatalogClicked);
+                    loadCatalog.url = catalogUrl;
+                    row.append(loadCatalog);
+            else:
+                if entry.getUrl() is not None:
+                    b  = DrilsdownUI.makeButton("View",DrilsdownUI.viewUrlClicked);
+                    b.url = self.makeUrl("/entry/show?entryid=" + id);
+                    b.name = name;
+                    row.append(b);
+                    fileSize = entry.getFileSize();
+                    if fileSize>0:
+                        link = self.makeUrl("/entry/get?entryid=" + id);
+                        row.append(HTML('&nbsp;&nbsp;<a target=ramadda href="' + link+'">Download (' + repr(fileSize) +' bytes) </a>'));
+                else:
+                    row.append(HTML('<a target=_filedownload href="' + entry.path +'">' + entry.path +'</>'));
+            rows.append(HBox(row));
+
+        doDisplay(VBox(rows));
+        if cnt == 0:
+            doDisplay(HTML("<b>No entries found</b>"));
+
+
+class LocalFiles(Repository):
+    def __init__(self, dir):
+        if dir is None:
+            self.dir = ".";
+        else:
+            self.dir = dir;
+        self.cwd = self.dir;
+        self.name =   "Local Files";
+        self.searchCnt = 0;
+
+    def listEntry(self, entryId):
+        """List the entries held by the entry id"""
+        entries = self.doList(entryId);
+        self.displayEntries("<b></b><br>", entries);
+
+
+    def getId(self):
+        return self.dir;
+
+    def getName(self):
+        return self.name;
+
+    def getBase(self):
+        return self.dir;
+
+    def doList(self, dir = None, display=False, label="Entries"):
+        """make a list of RamaddaEntry objects that are children of the given entryId"""
+        if dir is None:
+            dir = self.dir;
+        files =  os.listdir(dir);
+        entries = [];
+        prefix  = dir+"/";
+        if prefix == "./":
+            prefix = "";
+        for i in range(len(files)):
+            if files[i].startswith(".") is not True:
+                entries.append(FileEntry(self, prefix + files[i]));
+
+        if display:
+            self.displayEntries(label, entries);
+        else:
+            return  entries;
+
+    def doSearch(self, value, type=None):
+        """Do a search for the text value and (optionally) the entry type. Return a list of RamaddaEntry objects"""
+        self.searchCnt  = 0;
+##        print("Search not supported for local files");
+        files = [];
+        self.doSearchInner(value,self.dir, files, type);
+        return files;
+
+    def doSearchInner(self, value, dir, list, type):
+        ##Only check so many files
+        if self.searchCnt > 5000:
+            return;
+        files =  os.listdir(dir);
+        for i in range(len(files)):
+            File = files[i];
+            file = File.lower();
+            if file.startswith("."):
+                continue;
+            if re.match(value, File) or value in File or re.match(value, file) or value in file:
+                ok =True;
+                if type is not None:
+                    if type == "type_idv_bundle":
+                        if not File.endswith(".xidv") and not File.endswith(".zidv"):
+                            ok  = False;
+                        
+                    if type == "type_drilsdown_casestudy":
+                        if not os.path.isdir(dir +"/" + file):
+                            ok = False;
+                    if type =="cdm_grid":
+                        if not File.endswith(".nc"):
+                            ok  =False;
+                if ok:
+                    list.append(FileEntry(self,dir+"/" + file));
+            if os.path.isdir(dir +"/" + file):
+                self.doSearchInner(value, dir+"/" + file,list, type);
+
+
+
+
+class TDS(Repository):
+    def __init__(self, url):
+        self.url = url;
+        catalog =  readUrl(url);
+        root = xml.etree.ElementTree.fromstring(catalog);
+        self.name = root.attrib['name'];
+
+    def listEntry(self, entryId):
+        """List the entries held by the entry id"""
+        entries = self.doList(entryId);
+        self.displayEntries("<b></b><br>", entries);
+
+
+    def getId(self):
+        return self.url;
+
+    def getName(self):
+        return self.name;
+
+    def getBase(self):
+        return self.url;
+
+    def doList(self, url = None, display=False, label="Entries"):
+        """make a list of RamaddaEntry objects that are children of the given entryId"""
+        if url is None:
+            url = self.url;
+        catalog =  readUrl(url);
+        root = xml.etree.ElementTree.fromstring(catalog);
+        entries= [];
+        for child in root:
+#            print("child:" + child.tag);
+            self.getEntries(root, url, child, entries);
+
+        if display:
+            self.displayEntries(label, entries);
+        else:
+            return  entries;
+
+    def cleanTag(self, tag):
+        tag = re.sub("{.*}","", tag);
+        return tag;
+        
+
+    def getEntries(self, root, url, element, entries):
+        tag = self.cleanTag(element.tag);
+
+        if tag == "dataset":
+            for child in element:
+                self.getEntries(root, url, child, entries);
+            serviceName = self.findServiceName(root);
+            if serviceName is not None:
+                print("dataset:" + element.attrib["name"]);
+                return;
+            return;
+        if tag == "catalogRef":
+            href = element.attrib["{http://www.w3.org/1999/xlink}href"];
+            title = element.attrib["{http://www.w3.org/1999/xlink}title"];
+            url = urljoin(url, href);
+            entries.append(TDSCatalogEntry(self, url, title));
+            return;
+            
+        return;
+
+    def findOpendapServices(self, parentService, element, map):
+##        serviceType="OPENDAP"
+        return;
+
+    def findServiceName(self, element):
+
+        if element.tag == "serviceName":
+            return element.text;
+        for child in element:
+            name = self.findServiceName(child);
+            if name is not None:
+                return name;
+        return None;
+
+
+
+
+    def doSearch(self, value, type=None):
+        print("Search not supported for TDS repositories");
+        return [];
+
+
+
+
+
+
+class Ramadda(Repository):
     theRamadda = None;
     def __init__(self, url):
         self.url = url;
@@ -639,13 +925,6 @@ class Ramadda:
         self.name =   toks[0].replace("_comma_",",");
         self.icon =  toks[1];
 
-    def setRamadda(url, shouldList=False):
-        """Set the ramadda to be used. The arg should be the normal /entry/view URL for a RAMADDA entry"""
-        Ramadda.theRamadda = Ramadda(url);
-        if shouldList:
-            listRamadda(Ramadda.theRamadda.entryId);
-        return  Ramadda.theRamadda;
-
 
     def getId(self):
         return self.entryId;
@@ -655,6 +934,21 @@ class Ramadda:
 
     def getBase(self):
         return self.base;
+
+    def listEntry(self, entryId):
+        if entryId is None:
+            entryId = self.entryId;
+        """List the entries held by the entry id"""
+#        print(self.makeUrl("/entry/show?output=entry.csv&escapecommas=true&fields=name,icon&entryid=" + entryId));
+        toks =  readUrl(self.makeUrl("/entry/show?output=entry.csv&escapecommas=true&fields=name,icon&entryid=" + entryId)).split("\n")[1].split(",");
+        baseName =  toks[0];
+        baseName  = baseName.replace("_comma_",",");
+        icon =  toks[1];
+        entries = self.doList(entryId);
+        self.displayEntries("<b>" + "<img src=" + self.host + icon+"> " + "<a target=self href=" +self.base +"/entry/show?entryid=" + entryId +">" + baseName+"</a></b><br>", entries);
+
+
+
 
     def doList(self, entryId = None, display=False, label="Entries"):
         """make a list of RamaddaEntry objects that are children of the given entryId"""
@@ -721,74 +1015,7 @@ class Ramadda:
         if icon is not None:
             html = "<img src=" + self.host + icon+"> " + html;
         return html;
-
     
-    def displayEntries(self, label="Entries", entries=[]):
-        cnt = 0;
-        indent = HTML("&nbsp;&nbsp;&nbsp;");
-        rows=[HTML(label)];
-        for i in range(len(entries)):
-            if cnt > 100:
-                break;
-            cnt = cnt+1;
-            entry = entries[i];
-            name  = entry.getName();
-            id = entry.getId();
-            type = entry.getType();
-            icon = entry.getIcon();
-            url = entry.getUrl();
-            fullName = name;
-            maxLength  = 25;
-            if len(name)>maxLength:
-                name = name[:maxLength-len(name)];
-            name = name.ljust(maxLength," ");
-            name = name.replace(" ","&nbsp;");
-            href = self.makeEntryHref(entry.getId(),  name, entry.getIcon(), fullName);
-            href  = "<span style=font-family:monospace;>" + href +"</span>";
-            href = HTML(href);
-            row = [indent, href];
-            id = entry.getId();
-            type = entry.getType();
-            if entry.isBundle():
-                b  = DrilsdownUI.makeButton("Load bundle",DrilsdownUI.loadBundleClicked);
-                b.entry = entry;
-                b.url  = self.makeUrl("/entry/get?entryid=" + id)
-                row.append(b);
-                b  = DrilsdownUI.makeButton("Set URL",DrilsdownUI.setUrlClicked);
-                b.entry = entry;
-                row.append(b);
-                link = self.makeUrl("/entry/show/?output=idv.islform&entryid=" + id);
-                row.append(HTML('<a target=ramadda href="' + link +'">Subset Bundle</a>'));
-            elif entry.isGrid():
-                b  = DrilsdownUI.makeButton("Load data",DrilsdownUI.loadDataClicked);
-                b.name =fullName;
-                b.entry  = entry;
-                row.append(b);
-                b  = DrilsdownUI.makeButton("Set data",DrilsdownUI.setDataClicked);
-                b.entry  = entry;
-                row.append(b);
-            elif entry.isGroup():
-                b  = DrilsdownUI.makeButton("List",DrilsdownUI.listRamaddaClicked);
-                b.entryid = id;
-                loadCatalog  = DrilsdownUI.makeButton("Load Catalog",DrilsdownUI.loadCatalogClicked);
-                loadCatalog.url = self.makeUrl("/entry/show?output=thredds.catalog&entryid=" + id);
-                row.append(b);
-                row.append(loadCatalog);
-            else:
-                b  = DrilsdownUI.makeButton("View",DrilsdownUI.viewUrlClicked);
-                b.url = self.makeUrl("/entry/show?entryid=" + id);
-                b.name = name;
-                row.append(b);
-
-                fileSize = entry.getFileSize();
-                if fileSize>0:
-                    link = self.makeUrl("/entry/get?entryid=" + id);
-                    row.append(HTML('&nbsp;&nbsp;<a target=ramadda href="' + link+'">Download (' + repr(fileSize) +' bytes) </a>'));
-            rows.append(HBox(row));
-
-        doDisplay(VBox(rows));
-        if cnt == 0:
-            doDisplay(HTML("<b>No entries found</b>"));
 
     def publish(self, name, file=None, parent=None):
         if "RAMADDA_USER" not in os.environ:
@@ -831,15 +1058,26 @@ class Ramadda:
                 print(r.text);
 
 
-class RamaddaEntry:
-    def __init__(self, ramadda, name, id, type, icon, url, fileSize):
-        self.ramadda = ramadda;
+class RepositoryEntry:
+    def __init__(self, repository, name, id, type, icon, fileSize):
+        self.repository = repository;
         self.name =  name.replace("_comma_",",");
         self.id = id;
         self.type = type;
         self.icon = icon;
-        self.url = url;
         self.fileSize = fileSize;
+
+    def getFilePath(self):
+        return None;
+
+    def getDataPath(self):
+        return self.getFilePath();
+
+    def getCatalogUrl(self):
+        return None;
+
+    def getRepository(self):
+        return self.repository;
 
     def getName(self):
         return self.name;
@@ -854,10 +1092,80 @@ class RamaddaEntry:
         return self.icon;
 
     def getUrl(self):
-        return self.url;
+        return None;
 
     def getFileSize(self):
         return self.fileSize;
+
+    def isBundle(self):
+        return False;
+
+    def isGrid(self):
+        return self.getType() == "cdm_grid" or self.getName().endswith(".nc");
+
+    def isGroup(self):
+        return False;
+
+    def addDisplayWidget(self, row):
+        return;
+
+
+class TDSCatalogEntry(RepositoryEntry):
+    def __init__(self, repository, url, name):
+        RepositoryEntry.__init__(self,repository, name, url, "", None, 0);
+        self.url   = url;
+
+    def getFilePath(self):
+        return self.url;
+
+    def isGroup(self):
+        return True;
+
+    def getCatalogUrl(self):
+        return self.url;
+
+
+
+
+class FileEntry(RepositoryEntry):
+    def __init__(self, repository, path):
+##        print(path);
+        RepositoryEntry.__init__(self,repository, path, path, "", None, os.path.getsize(path));
+        self.path   = path;
+
+
+    def getFilePath(self):
+        return os.getcwd() + "/" + self.path;
+
+    def getDataPath(self):
+        return self.getFilePath();
+
+    def isBundle(self):
+        return self.path.find("xidv") >=0 or self.path.find("zidv")>=0;
+
+    def isGroup(self):
+        return os.path.isdir(self.path);
+
+
+class RamaddaEntry(RepositoryEntry):
+    def __init__(self, ramadda, name, id, type, icon,  url, fileSize):
+        RepositoryEntry.__init__(self,ramadda, name, id, type, icon, fileSize);
+        self.url = url;
+
+    def getFilePath(self):
+        return  self.getRepository().makeUrl("/entry/get?entryid=" + self.getId())
+
+    def getDataPath(self):
+        return self.makeOpendapUrl()
+
+    def getCatalogUrl(self):
+        return self.repository.makeUrl("/entry/show?output=thredds.catalog&entryid=" + self.id);
+
+    def getIcon(self):
+        return self.icon;
+
+    def getUrl(self):
+        return self.url;
 
     def isBundle(self):
         return self.getType() == "type_idv_bundle" or self.getUrl().find("xidv") >=0 or self.getUrl().find("zidv")>=0;
@@ -869,19 +1177,32 @@ class RamaddaEntry:
         return self.getType()=="type_drilsdown_casestudy" or self.getType()=="group" or self.getType()=="localfiles";
 
     def makeOpendapUrl(self):
-        return  self.ramadda.base +"/opendap/" + self.id +"/entry.das";
+        return  self.getRepository().base +"/opendap/" + self.id +"/entry.das";
 
     def makeGetFileUrl(self):
-        return  self.ramadda.base +"/entry/get?entryid=" + self.id;
+        return  self.getRepository().base +"/entry/get?entryid=" + self.id;
+
+    def addDisplayWidget(self,row):
+        b  = DrilsdownUI.makeButton("Set URL",DrilsdownUI.setUrlClicked);
+        b.entry = self;
+        row.append(b);
+        link = self.getRepository().makeUrl("/entry/show/?output=idv.islform&entryid=" + self.getId());
+        row.append(HTML('<a target=ramadda href="' + link +'">Subset Bundle</a>'));
 
 
-##Make the RAMADDAS
-ramaddas  =[Ramadda("http://weather.rsmas.miami.edu/repository/entry/show?entryid=45e3b50b-dbe2-408b-a6c2-2c009749cd53"),
-           Ramadda("http://geodesystems.com/repository/entry/show?entryid=12704a38-9a06-4989-aac4-dafbbe13a675")
+##Make the REPOSITORIES
+repositories  =[Ramadda("http://weather.rsmas.miami.edu/repository/entry/show?entryid=45e3b50b-dbe2-408b-a6c2-2c009749cd53"),
+           Ramadda("http://geodesystems.com/repository/entry/show?entryid=12704a38-9a06-4989-aac4-dafbbe13a675"),
+           TDS("http://thredds.ucar.edu/thredds/catalog.xml"),
+            LocalFiles(".")
 ##            Ramadda("http://motherlode.ucar.edu/repository/entry/show?entryid=0")
 ];
-Ramadda.theRamadda = ramaddas[0];
+Repository.theRepository = repositories[0];
 
+
+#import DrilsdownDefaults;
+
+#if not  DrilsdownDefaults.generatedNotebook:
 
 makeUI("");
 
