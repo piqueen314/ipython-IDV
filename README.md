@@ -36,7 +36,7 @@ from drilsdown import Idv
 from drilsdown import Ramadda
 </pre>
 
-Further examples will be posted here later. We welcome your use cases! Email mapes at miami dot edu. 
+We welcome your use cases! Email mapes at miami dot edu. See examples [below](https://github.com/Unidata/ipython-IDV/blob/master/README.md#examples).
 
 ---------
 
