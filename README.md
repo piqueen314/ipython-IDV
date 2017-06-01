@@ -1,9 +1,9 @@
 # ipython-IDV
-###Part of the [EarthCube DRILSDOWN project](https://brianmapes.github.io/EarthCube-DRILSDOWN/)
+### Part of the [EarthCube DRILSDOWN project](https://brianmapes.github.io/EarthCube-DRILSDOWN/)
 
 Extension for IPython Notebooks to provide line and cell magics to call out to Unidata's [Integrated Data Viewer](https://github.com/Unidata/IDV) 
 
-###To set it up:
+### To set it up:
 
 1. After installing Jupyter/iPython notebook software [like this](https://jupyter-notebook-beginner-guide.readthedocs.io/en/latest/), you will also need to install the [ipywidgets package](https://ipywidgets.readthedocs.io/en/latest/user_install.html)
 
