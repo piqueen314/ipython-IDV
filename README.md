@@ -51,7 +51,7 @@ If you operate a RAMADDA, and want it to host DRILSDOWN _Case Study_ digital obj
 
 
 
-<h2>Examples</h2>
+<h2>Examples of Python notebooks calling DRILSDOWN and The IDV:</h2>
 Here is an example of how to use the API to load an IDV bundle with different bounding boxes and capture images
 
 <pre>
