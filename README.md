@@ -2,44 +2,51 @@
 
 Extension for IPython Notebooks to provide line and cell magics to call out to Unidata's [Integrated Data Viewer](https://github.com/Unidata/IDV) 
 
-Part of the [DRILSDOWN project](https://github.com/Unidata/drilsdown)
+Part of the [EarthCube DRILSDOWN project](https://brianmapes.github.io/EarthCube-DRILSDOWN/)
 
-To set this up:
+To set up:
 
-After installing the iPython notebook to your machine you will also need to install the [ipywidgets package](https://ipywidgets.readthedocs.io/en/latest/user_install.html)
+1. After installing Jupyter/iPython notebook software [like this](https://jupyter-notebook-beginner-guide.readthedocs.io/en/latest/), you will also need to install the [ipywidgets package](https://ipywidgets.readthedocs.io/en/latest/user_install.html)
 
-Once installed copy the [drilsdown.py](https://github.com/Unidata/ipython-IDV/blob/master/drilsdown.py) extension to your local extensions directory -
-~/ipython/extensions
+2. Once Jupyter/iPython is ready, copy [drilsdown.py](https://github.com/Unidata/ipython-IDV/blob/master/drilsdown.py) to your local extensions directory, _~/.ipython/extensions_
 
-When you run the iPython notebook do:
+3. To run IDV commands from the Notebook, you will need to have installed [IDV version 5.4 or later](http://www.unidata.ucar.edu/software/idv/nightly/). Also, you need to set your IDV_HOME environment variable to be the IDV install directory, so that python can execute the command ${IDV_HOME}/runIDV
 
-<pre>
-%load_ext drilsdown
-</pre>
-
-If you are writing code you can also import the Idv and Ramadda classes:
-
-<pre>
-from drilsdown import Idv
-from drilsdown import Ramadda
-</pre>
-
-You should see an initial user interface including a link to the help section.
-
-To run the IDV commands you need to have the latest [IDV version 5.3u1](http://www.unidata.ucar.edu/software/idv/nightly/) or above and set IDV_HOME environment variable to the IDV install directory. The python will run:
-${IDV_HOME}/runIDV
-
-You also need to configure your IDV to accept connections from the ipython notebook. To do this set the following property in your local ~/.unidata/idv/DefaultIdv/idv.properties file:
+4. You also need to configure your IDV to accept connections from the ipython notebook. To do this set the following property in your local ~/.unidata/idv/DefaultIdv/idv.properties file:
 
 <pre>
 idv.monitorport = 8765
 </pre>
 
 
-The [ramaddaplugin.jar](https://github.com/Unidata/ipython-IDV/blob/master/ramaddaplugin.jar) is an IDV plugin that provides publication services to RAMADDA. Copy this file to your local IDV plugins directory (~/.unidata/idv/DefaultIdv/plugins). It is included here so all of the products that are required for running drilsdown can be found in 
+--------
+###Now you;ve done the 4 steps above. 
+When you launch _jupyter notebook_, and run an iPython notebook in your browser, do this in the notebook:
+
+<pre>
+%load_ext drilsdown
+</pre>
+
+That will give you a dashboard-style view of many of the ways the Notebook can launch and interact with The IDV, and find resources such as existing bundles, data catalogs, and more, including a link to the help section.
+
+
+If you plan on writing Python code in this notbeook (rather then merely capturing images and notes about a case study IDV session), you should import the Idv and Ramadda classes:
+
+<pre>
+from drilsdown import Idv
+from drilsdown import Ramadda
+</pre>
+
+Further examples will be posted here later. We welcome your use cases! Email mapes at miami dot edu. 
+
+---------
+
+If you want to enable your IDV to publish to a RAMADDA server, get [ramaddaplugin.jar](https://github.com/Unidata/ipython-IDV/blob/master/ramaddaplugin.jar). Copy this file to your local IDV plugins directory (~/.unidata/idv/DefaultIdv/plugins). While it is not a plain text code file, it is included in this repo so all of the products that are required for running drilsdown can be found in 
 one place.
 
-The [drilsdownplugin.jar](https://github.com/Unidata/ipython-IDV/blob/master/drilsdownplugin.jar)  is a RAMADDA plugin that provides Drisldown Case Study functionality. It is produced from the [RAMADDA drilsdown repository](https://github.com/Unidata/drilsdown) but is included here so all of the products that are required for running drilsdown can be found in one place. Copy this plugin to your RAMADDA plugins directory.
+---------
+
+If you operate a RAMADDA, and want it to host DRILSDOWN _Case Study_ digital objects, get [drilsdownplugin.jar](https://github.com/Unidata/ipython-IDV/blob/master/drilsdownplugin.jar), put it in your RAMADDA installation's _plugins_ area, and restart. It is produced from the code at [RAMADDA drilsdown repository](https://github.com/Unidata/drilsdown) but is included here so all of the products that are required for running drilsdown can be found in one place.
 
 
 
