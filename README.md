@@ -19,7 +19,7 @@ idv.monitorport = 8765
 
 
 --------
-###Now you;ve done the 4 steps above. 
+### Now you've done the 4 steps above. 
 When you launch _jupyter notebook_, and run an iPython notebook in your browser, do this in the notebook:
 
 <pre>
