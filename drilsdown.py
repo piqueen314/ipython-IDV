@@ -102,7 +102,7 @@ def idvHelp(line, cell=None):
     "publishNotebook <notebook file name> - publish the current notebook to RAMADDA via the IDV<br>" +\
     "setRamadda <ramadda url to a Drilsdown case study><br>" +\
     "createCaseStudy <case study name><br>" +\
-    "setBBOX <north west south east> No arguments to clear the bbox<br></pre>";
+    "setBBOX &lt;north west south east&gt; No arguments to clear the bbox<br></pre>";
     doDisplay(HTML(html));
 
 def runIdv(line = None, cell=None):
@@ -260,6 +260,7 @@ class DrilsdownUI:
     def makeUI():
         global repositories;
         nameMap = {};
+        names = [];
         first = None;
         for i in range(len(repositories)):
             repository = repositories[i];
@@ -267,6 +268,8 @@ class DrilsdownUI:
                 first = repository.getId();
             DrilsdownUI.idToRepository[repository.getId()] = repository;
             nameMap[repository.getName()] =  repository.getId();
+            names.append(repository.getName());
+
 
         textLayout=Layout(width='150px');
         repositorySelector = widgets.Dropdown(
@@ -510,10 +513,10 @@ class Idv:
         isl = '<isl><publish file="'  + file +'"/></isl>';
         print("Check your IDV to publish the file");
         result  = Idv.idvCall(Idv.cmd_loadisl, {"isl": isl});
-        if result  == None:
-            print("publish failed");
+        if result  is None:
+            print("Publication failed");
             return;
-        if result != "" and result is not None:
+        if result.strip()!="":
             print("Publication successful");
             print("URL: " + result);
             return
@@ -543,6 +546,7 @@ class Idv:
         if result == None:
             print("save failed");
             return;
+        print(filename);
         if os.path.isfile(filename):
             print ("bundle saved:" + filename);
             return FileLink(filename)
@@ -574,16 +578,16 @@ class Idv:
         extra = " publish=\"true\" ";
         isl = '<isl><save file="' + filename +'"' + extra +'/></isl>';
         result = Idv.idvCall(Idv.cmd_loadisl, {"isl": isl});
-        if result == None:
+        if result is None:
             print("save failed");
             return;
-        if result != "" and result is not None:
+        if result.strip() != "":
             print("Publication successful");
             print("URL: " + result);
         if os.path.isfile(filename):
             print ("bundle saved:" + filename);
             return FileLink(filename)
-        print ("bundle not saved");
+        print ("Publication failed");
 
 
 
@@ -629,10 +633,10 @@ class Idv:
         with NamedTemporaryFile(suffix='.gif') as f:
             isl = '<isl><' + what +' combine="true" file="' + f.name +'"' + extra +'>' + extra2  +'</' + what +'></isl>';
             result = Idv.idvCall(Idv.cmd_loadisl, {"isl": isl});
-            if result == None:
-                print("make" + what + " failed");
-                return;
             if idvPublish:
+                if result == None or result.strip()=="":
+                    print("make " + what + " failed");
+                    return;
                 print("Publication successful");
                 print("URL: " + result);
             if selfPublish:
@@ -792,7 +796,7 @@ class LocalFiles(Repository):
         return files;
 
     def doSearchInner(self, value, dir, list, type):
-        ##Only check so many files
+        ##Only check so many files - should make this breadth firs
         if self.searchCnt > 5000:
             return;
         files =  os.listdir(dir);
@@ -820,14 +824,15 @@ class LocalFiles(Repository):
                 self.doSearchInner(value, dir+"/" + file,list, type);
 
 
-
-
 class TDS(Repository):
-    def __init__(self, url):
+    def __init__(self, url,  name=None):
         self.url = url;
         catalog =  readUrl(url);
-        root = xml.etree.ElementTree.fromstring(catalog);
-        self.name = root.attrib['name'];
+        if name is not None:
+            self.name = name;
+        else:
+            root = xml.etree.ElementTree.fromstring(catalog);
+            self.name = root.attrib['name'];
 
     def listEntry(self, entryId):
         """List the entries held by the entry id"""
@@ -907,13 +912,9 @@ class TDS(Repository):
         return [];
 
 
-
-
-
-
 class Ramadda(Repository):
     theRamadda = None;
-    def __init__(self, url):
+    def __init__(self, url, name=None):
         self.url = url;
         toks = urlparse(url);
         self.host = toks.scheme +"://" + toks.netloc;
@@ -921,9 +922,11 @@ class Ramadda(Repository):
         path = re.sub("/entry.*","", toks.path);
         self.base += path;
         self.entryId = re.search("entryid=([^&]+)", toks.query).group(1);
-        toks =  readUrl(self.makeUrl("/entry/show?output=entry.csv&escapecommas=true&fields=name,icon&entryid=" + self.entryId)).split("\n")[1].split(",");
-        self.name =   toks[0].replace("_comma_",",");
-        self.icon =  toks[1];
+        if name is not None:
+            self.name = name;
+        else:
+            toks =  readUrl(self.makeUrl("/entry/show?output=entry.csv&escapecommas=true&fields=name,icon&entryid=" + self.entryId)).split("\n")[1].split(",");
+            self.name =   toks[0].replace("_comma_",",");
 
 
     def getId(self):
@@ -1191,11 +1194,15 @@ class RamaddaEntry(RepositoryEntry):
 
 
 ##Make the REPOSITORIES
-repositories  =[Ramadda("http://weather.rsmas.miami.edu/repository/entry/show?entryid=45e3b50b-dbe2-408b-a6c2-2c009749cd53"),
-           Ramadda("http://geodesystems.com/repository/entry/show?entryid=12704a38-9a06-4989-aac4-dafbbe13a675"),
-           TDS("http://thredds.ucar.edu/thredds/catalog.xml"),
+repositories  =[Ramadda("http://weather.rsmas.miami.edu/repository/entry/show?entryid=45e3b50b-dbe2-408b-a6c2-2c009749cd53","The Mapes IDV Collection"),
+           Ramadda("http://geodesystems.com/repository/entry/show?entryid=12704a38-9a06-4989-aac4-dafbbe13a675", "Geode Systems Drilsdown Collection"),
+            Ramadda("https://www.esrl.noaa.gov/psd/repository/entry/show?entryid=f8d470f4-a072-4c1e-809e-d6116a393818","NOAA-ESRL-PSD Climate Data Repository"),
+##                Ramadda("http://ramadda.atmos.albany.edu:8080/repository?entryid=643aa629-c53d-48cb-8454-572fad73cb0f","University of Albany RAMADDA"),
+           TDS("http://thredds.ucar.edu/thredds/catalog.xml","Unidata THREDDS Data Server"),
+            Ramadda("http://motherlode.ucar.edu/repository/entry/show?entryid=0","Unidata RAMADDA Server"),
+                TDS("http://weather.rsmas.miami.edu/thredds/catalog.xml","University of Miami THREDDS Data Server"),
             LocalFiles(".")
-##            Ramadda("http://motherlode.ucar.edu/repository/entry/show?entryid=0")
+
 ];
 Repository.theRepository = repositories[0];
 
