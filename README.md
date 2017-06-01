@@ -56,8 +56,6 @@ Here is an example of how to use the API to load an IDV bundle with different bo
 
 <pre>
 from drilsdown import Idv
-from drilsdown import Ramadda
-Ramadda.setRamadda("http://geodesystems.com/repository/entry/show?entryid=12704a38-9a06-4989-aac4-dafbbe13a675")
 Idv.fileUrl="http://geodesystems.com/repository/entry/get?entryid=d83e0924-008d-4025-9517-394e9f13712f"
 bboxes = [[50,-130,40,-100],[50,-100,40,-75],[40,-130,20,-100],[40,-100,20,-75]]
 for i in range(len(bboxes)):
@@ -69,8 +67,6 @@ for i in range(len(bboxes)):
 
 <pre>
 from drilsdown import Idv
-from drilsdown import Ramadda
-Ramadda.setRamadda("http://geodesystems.com/repository/entry/show?entryid=12704a38-9a06-4989-aac4-dafbbe13a675")
 Idv.fileUrl="http://geodesystems.com/repository/entry/get?entryid=d83e0924-008d-4025-9517-394e9f13712f"
 bboxes = [[50,-130,40,-100],[50,-100,40,-75],[40,-130,20,-100],[40,-100,20,-75]]
 for i in range(len(bboxes)):
