@@ -290,7 +290,7 @@ class DrilsdownUI:
         cssearch = widgets.Text(
             value='',
             layout=textLayout,
-            placeholder='Case study or folder',
+            placeholder='Case Study or folder',
             description='',
             disabled=False)
         cssearch.on_submit(DrilsdownUI.handleSearch);
@@ -300,7 +300,7 @@ class DrilsdownUI:
         gridsearch = widgets.Text(
             value='',
             layout=textLayout,
-            placeholder='Gridded data',
+            placeholder='Gridded data files',
             description='',
             disabled=False)
         gridsearch.on_submit(DrilsdownUI.handleSearch);
