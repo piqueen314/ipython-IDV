@@ -95,8 +95,8 @@ def idvHelp(line, cell=None):
     "           If no bundle given and if setRamadda has been called the bundle will be fetched from RAMADDA<br>" +\
     "loadBundleMakeImage <bundle url or file path><br>" +\
     "loadCatalog Load the case study catalog into the IDV<br>" +\
-    "makeImage <-publish> Capture an IDV image and optionally publish it to RAMADDA<br>" +\
-    "makeMovie <-publish> Capture an IDV movie and optionally publish it to RAMADDA<br>" +\
+    "makeImage <-publish> <-caption ImageName> Capture an IDV image and optionally publish it to RAMADDA<br>" +\
+    "makeMovie <-publish> <-caption MovieName> Capture an IDV movie and optionally publish it to RAMADDA<br>" +\
     "saveBundle <xidv or zidv filename> <-publish> - write out the bundle and optionally publish to RAMADDA<br>" +\
     "publishBundle  <xidv or zidv filename> - write out the bundle and publish it to RAMADDA<br>" +\
     "publishNotebook <notebook file name> - publish the current notebook to RAMADDA via the IDV<br>" +\
