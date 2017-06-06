@@ -315,22 +315,24 @@ class DrilsdownUI:
 
         repositorySelector.observe(DrilsdownUI.repositorySelectorChanged,names='value');
         display(VBox(
-                [Label("iPython-IDV Control Panel"),
-                    HBox([Label("Outputs append below until Cleared:"),
-                            DrilsdownUI.makeButton("Clear outputs",DrilsdownUI.clearClicked)]),
-                    HBox([Label("Resources:"),
+                [HTML("<h3>iPython-IDV Control Panel</h3>"),
+                    HBox([HTML("<b>Resources:</b>"),
                             repositorySelector,
                             listBtn]),
-                    HBox([Label("Search for:"), search,
+                    HBox([HTML("<b>Search for:</b>"), search,
                           cssearch, gridsearch, allsearch]),
-                    HBox([Label(""),
-                            DrilsdownUI.makeButton("Run IDV",DrilsdownUI.runIDVClicked),
+                    HBox([DrilsdownUI.makeButton("Run IDV",DrilsdownUI.runIDVClicked),
                             DrilsdownUI.makeButton("Make Image",DrilsdownUI.makeImageClicked, cbx),
                             DrilsdownUI.makeButton("Make Movie",DrilsdownUI.makeMovieClicked,cbx),
                             DrilsdownUI.makeButton("Save Bundle",DrilsdownUI.saveBundleClicked,cbx),
                             cbx]),
-                    HBox([Label("List available commands for use in code cells below:"),
-                            DrilsdownUI.makeButton("Available commands",idvHelp)]),
+
+
+
+                    HBox([
+#Label("Outputs append below until Cleared:"),
+                          DrilsdownUI.makeButton("Clear Outputs",DrilsdownUI.clearClicked),
+                          DrilsdownUI.makeButton("List Available Commands",idvHelp)]),
                     ]));
 
     def makeButton(label, callback, extra=None):
