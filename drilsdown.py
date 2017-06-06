@@ -95,8 +95,8 @@ def idvHelp(line, cell=None):
     "           If no bundle given and if setRamadda has been called the bundle will be fetched from RAMADDA<br>" +\
     "loadBundleMakeImage <bundle url or file path><br>" +\
     "loadCatalog Load the case study catalog into the IDV<br>" +\
-    "makeImage <-publish> Capture an IDV image and optionally publish it to RAMADDA<br>" +\
-    "makeMovie <-publish> Capture an IDV movie and optionally publish it to RAMADDA<br>" +\
+    "makeImage <-publish> <-caption ImageName> Capture an IDV image and optionally publish it to RAMADDA<br>" +\
+    "makeMovie <-publish> <-caption MovieName> Capture an IDV movie and optionally publish it to RAMADDA<br>" +\
     "saveBundle <xidv or zidv filename> <-publish> - write out the bundle and optionally publish to RAMADDA<br>" +\
     "publishBundle  <xidv or zidv filename> - write out the bundle and publish it to RAMADDA<br>" +\
     "publishNotebook <notebook file name> - publish the current notebook to RAMADDA via the IDV<br>" +\
@@ -290,7 +290,7 @@ class DrilsdownUI:
         cssearch = widgets.Text(
             value='',
             layout=textLayout,
-            placeholder='Case study or folder',
+            placeholder='Case Study or folder',
             description='',
             disabled=False)
         cssearch.on_submit(DrilsdownUI.handleSearch);
@@ -300,7 +300,7 @@ class DrilsdownUI:
         gridsearch = widgets.Text(
             value='',
             layout=textLayout,
-            placeholder='Gridded data',
+            placeholder='Gridded data files',
             description='',
             disabled=False)
         gridsearch.on_submit(DrilsdownUI.handleSearch);
@@ -324,23 +324,24 @@ class DrilsdownUI:
             disabled=False);
 
         repositorySelector.observe(DrilsdownUI.repositorySelectorChanged,names='value');
-        display(VBox([
-                    HBox([
+        display(VBox(
+                [Label("iPython-IDV Control Panel"),
+                    HBox([Label("Outputs append below until Cleared:"),
+                            DrilsdownUI.makeButton("Clear outputs",DrilsdownUI.clearClicked)]),
+                    HBox([Label("Resources:"),
+                            repositorySelector,
+                            listBtn]),
+                    HBox([Label("Search for:"), search,
+                          cssearch, gridsearch, allsearch]),
+                    HBox([Label(""),
                             DrilsdownUI.makeButton("Run IDV",DrilsdownUI.runIDVClicked),
                             DrilsdownUI.makeButton("Make Image",DrilsdownUI.makeImageClicked, cbx),
                             DrilsdownUI.makeButton("Make Movie",DrilsdownUI.makeMovieClicked,cbx),
                             DrilsdownUI.makeButton("Save Bundle",DrilsdownUI.saveBundleClicked,cbx),
                             cbx]),
-                    HBox([
-                            repositorySelector,
-                            listBtn,
-                            DrilsdownUI.makeButton("Clear",DrilsdownUI.clearClicked),
-                            DrilsdownUI.makeButton("Help",idvHelp)]),
-                    HBox([Label("Search for:"), search,
-                          cssearch, gridsearch, allsearch]),
-                
+                    HBox([Label("List available commands for use in code cells below:"),
+                            DrilsdownUI.makeButton("Available commands",idvHelp)]),
                     ]));
-
 
     def makeButton(label, callback, extra=None):
         """Utility to make a button widget"""
