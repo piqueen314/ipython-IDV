@@ -52,8 +52,6 @@ except ImportError:
 idvDebug = 0;
 
 
-#The global bounding box
-bbox = None;
 displayedItems = [];
 
 def doDisplay(comp):
@@ -130,7 +128,6 @@ def loadData(line, cell=None, name = None):
     
 
 def loadBundle(line, cell=None):
-    global bbox;
     if line == None or line == "":
         if Repository.theRepository is not None:
             line = Repository.theRepository.makeUrl("/drilsdown/getbundle?entryid=" + Repository.theRepository.entryId);
@@ -139,7 +136,7 @@ def loadBundle(line, cell=None):
         print ("No bundle argument provided");
         return;
 
-    Idv.loadBundle(line, bbox);
+    Idv.loadBundle(line);
 
 
 def makeImage(line, cell=None):
@@ -215,14 +212,7 @@ def publishBundle(line, cell=None):
 
 
 def setBBOX(line, cell=None):
-    global bbox;
-    toks = line.split();
-    if len(toks) == 0:
-        bbox = None;
-        print("BBOX is cleared");
-        return;
-    bbox = toks;
-    print("BBOX is set");
+    Idv.setBBOX(line);
 
 
 
@@ -430,6 +420,7 @@ class DrilsdownUI:
 
 
 class Idv:
+    bbox = None;
     dataUrl = None;
     fileUrl = None;
 
@@ -524,6 +515,19 @@ class Idv:
         print("Publication failed");
 
 
+    def setBBOX(line):
+        toks = line.split();
+        if len(toks) == 0:
+            Idv.bbox = None;
+            print("BBOX is cleared");
+            return;
+        Idv.bbox = [];
+        for i in range(len(toks)):
+            Idv.bbox.append(float(toks[i]));
+        print("BBOX is set");
+
+
+
     def loadCatalog(url = None):
         if url is  None or url  == "":
             url = Repository.theRepository.makeUrl("/entry/show?parentof=" + Repository.theRepository.entryId +"&amp;output=thredds.catalog");
@@ -558,6 +562,8 @@ class Idv:
         print("bundle: "  + bundleUrl);
         extra1 = "";
         extra2 = "";
+        if bbox is  None:
+            bbox = Idv.bbox;
         if bbox is not None:
             extra1 += 'bbox="' + repr(bbox[0]) +"," +repr(bbox[1]) +"," + repr(bbox[2]) +"," + repr(bbox[3]) +'"';
         ##The padding is to reset the viewpoint to a bit larger area than the bbox
@@ -569,6 +575,7 @@ class Idv:
             east = float(bbox[3])+padding;
             extra2 += '<pause/><center north="' + repr(north) +'" west="' + repr(west) +'" south="'  + repr(south) +'" east="' + repr(east) +'" />';
         isl = '<isl>\n<bundle file="' + bundleUrl +'" ' + extra1 +'/>' + extra2 +'\n</isl>';
+        print(isl);
         if Idv.idvCall(Idv.cmd_loadisl, {"isl": isl}) == None:
             print("loadBundle failed");
             return;
