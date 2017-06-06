@@ -35,7 +35,7 @@ import xml.etree.ElementTree
 from glob import glob
 from os import listdir
 from os.path import isfile, join
-
+import IPython 
 
 
 
@@ -154,7 +154,7 @@ def makeImage(line, cell=None):
         elif tok == "-caption":
             skip = 1;
             caption = toks[i+1];
-    Idv.makeImage(publish, caption);
+    return Idv.makeImage(publish, caption);
 
 
 
@@ -170,7 +170,7 @@ def makeMovie(line, cell=None):
     publish  = False;
     if line == "-publish":
         publish = True;
-    Idv.makeMovie(publish);
+    return Idv.makeMovie(publish);
 
 
 def setRamadda(line, cell=None):
@@ -246,7 +246,7 @@ class DrilsdownUI:
     """Handles all of the UI callbacks """
     idToRepository = {};
 
-
+    @staticmethod
     def makeUI():
         global repositories;
         nameMap = {};
@@ -334,7 +334,7 @@ class DrilsdownUI:
                           DrilsdownUI.makeButton("Clear Outputs",DrilsdownUI.clearClicked),
                           DrilsdownUI.makeButton("List Available Commands",idvHelp)]),
                     ]));
-
+    @staticmethod
     def makeButton(label, callback, extra=None):
         """Utility to make a button widget"""
         b = widgets.Button(
@@ -348,55 +348,66 @@ class DrilsdownUI:
         return b;
 
 
+    @staticmethod
     def handleSearch(widget):
         type = widget.type;
         value  =  widget.value.replace(" ","%20");
         entries = Repository.theRepository.doSearch(value, type);
         Repository.theRepository.displayEntries("<b>Search Results:</b> " + widget.value +" <br>", entries);
 
+    @staticmethod
     def runIDVClicked(b):
         runIdv("");
 
+    @staticmethod
     def saveBundleClicked(b):
         extra = "";
         if b.extra.value == True:
             extra = "-publish"
         saveBundle(extra);
 
+    @staticmethod
     def makeImageClicked(b):
         extra = "";
         if b.extra.value:
             extra = "-publish"
         makeImage(extra);
 
+    @staticmethod
     def makeMovieClicked(b):
         if b.extra.value:
             Idv.makeMovie(True);
         else:
             Idv.makeMovie(False);
 
+    @staticmethod
     def loadBundleClicked(b):
         loadBundle(b.entry.getFilePath());
 
+    @staticmethod
     def viewUrlClicked(b):
         doDisplay(HTML("<a target=ramadda href=" + b.url +">" + b.name+"</a>"));
         display(IFrame(src=b.url,width=800, height=400));
 
 
+    @staticmethod
     def loadDataClicked(b):
         loadData(b.entry.getDataPath(), None, b.name);
 
 
+    @staticmethod
     def setDataClicked(b):
         url  = b.entry.getDataPath();
         Idv.dataUrl = url;
         print('To access the data use the variable: Idv.dataUrl or:\n' + url);
 
+    @staticmethod
     def setUrlClicked(b):
         url  = b.entry.makeGetFileUrl();
         Idv.fileUrl = url;
         print('To access the URL use the variable: Idv.fileUrl or:\n' + url);
 
+    @staticmethod
     def listRepositoryClicked(b):
         if b.entry is None:
             listRepository(None);
@@ -404,14 +415,17 @@ class DrilsdownUI:
             listRepository(b.entry.getId(), b.entry.getRepository());
 
 
+    @staticmethod
     def loadCatalogClicked(b):
         loadCatalog(b.url);
 
+    @staticmethod
     def repositorySelectorChanged(s):
         repository = DrilsdownUI.idToRepository[s['new']];
         Repository.setRepository(repository);
 
 
+    @staticmethod
     def clearClicked(b):
         clear_output();
         global displayedItems;
@@ -434,6 +448,7 @@ class Idv:
     idvBaseUrl = "http://127.0.0.1:8765";
 
 
+    @staticmethod
     def idvPing():
         """This function checks if the IDV is running"""
 
@@ -444,6 +459,7 @@ class Idv:
             return None;
 
 
+    @staticmethod
     def runIdv():
         """Check if the IDV is running"""
         idvRunning = Idv.idvPing();
@@ -466,10 +482,7 @@ class Idv:
             time.sleep(1);
         print ("IDV failed to start (or is slow in starting)");
 
-
-
-
-
+    @staticmethod
     def idvCall(command, args=None):
         """
         Will start up the IDV if needed then call the command
@@ -488,7 +501,7 @@ class Idv:
         except:
             return None;
 
-
+    @staticmethod
     def loadData(url, name=None):
         extra1 = "";
         extra2 = "";
@@ -500,6 +513,7 @@ class Idv:
             return;
         print("data loaded");
     
+    @staticmethod
     def publishNotebook(filename):
         ipython = get_ipython();
         ipython.magic("notebook -e " + filename);
@@ -517,6 +531,7 @@ class Idv:
         print("Publication failed");
 
 
+    @staticmethod
     def setBBOX(line):
         toks = line.split();
         if len(toks) == 0:
@@ -530,6 +545,7 @@ class Idv:
 
 
 
+    @staticmethod
     def loadCatalog(url = None):
         if url is  None or url  == "":
             url = Repository.theRepository.makeUrl("/entry/show?parentof=" + Repository.theRepository.entryId +"&amp;output=thredds.catalog");
@@ -543,6 +559,7 @@ class Idv:
         print("Catalog loaded");
 
 
+    @staticmethod
     def saveBundle(filename, publish=False):
         extra = "";
         filename = "idv.xidv";
@@ -560,6 +577,7 @@ class Idv:
         print ("bundle not saved");
 
 
+    @staticmethod
     def loadBundle(bundleUrl, bbox=None):
         print("bundle: "  + bundleUrl);
         extra1 = "";
@@ -584,6 +602,7 @@ class Idv:
 ##        print("bundle loaded");
 
 
+    @staticmethod
     def publishBundle(filename):
         extra = " publish=\"true\" ";
         isl = '<isl><save file="' + filename +'"' + extra +'/></isl>';
@@ -601,12 +620,14 @@ class Idv:
 
 
 
+    @staticmethod
     def makeMovie(publish=False, caption=None, display=True):
-        Idv.makeImageOrMovie(False, publish, caption, display);
+        return Idv.makeImageOrMovie(False, publish, caption, display);
 
+    @staticmethod
     def makeImage(publish=False, caption=None, display=True):
-        Idv.makeImageOrMovie(True, publish, caption, display);
-
+        return Idv.makeImageOrMovie(True, publish, caption, display);
+    @staticmethod
     def makeImageOrMovie(image, publish=False, caption=None, display=True):
         what = "movie";
         if image:
@@ -652,13 +673,10 @@ class Idv:
             if selfPublish:
                 ramadda.publish(name,file=f.name, parent=parent);
             data = open(f.name, "rb").read()
-            data = b64encode(data).decode('ascii');
-            img = '<img src="data:image/gif;base64,{0}">';
+            #data = b64encode(data).decode('ascii');
+            #img = '<img src="data:image/gif;base64,{0}">';
             if display:
-                doDisplay(HTML(img.format(data)));
-
-
-
+                return IPython.core.display.Image(data)
 
 class Repository:
     theRepository = None;
@@ -1224,4 +1242,5 @@ Repository.theRepository = repositories[0];
 makeUI("");
 
         
+
 
