@@ -332,7 +332,7 @@ class DrilsdownUI:
                     HBox([
 #Label("Outputs append below until Cleared:"),
                           DrilsdownUI.makeButton("Clear Outputs",DrilsdownUI.clearClicked),
-                          DrilsdownUI.makeButton("Commands help",idvHelp)]),
+                          DrilsdownUI.makeButton("Commands Help",idvHelp)]),
                     ]));
     @staticmethod
     def makeButton(label, callback, extra=None):
