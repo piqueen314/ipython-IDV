@@ -579,7 +579,6 @@ class Idv:
 
     @staticmethod
     def loadBundle(bundleUrl, bbox=None):
-        print("bundle: "  + bundleUrl);
         extra1 = "";
         extra2 = "";
         if bbox is  None:
@@ -627,6 +626,7 @@ class Idv:
     @staticmethod
     def makeImage(publish=False, caption=None, display=True):
         return Idv.makeImageOrMovie(True, publish, caption, display);
+
     @staticmethod
     def makeImageOrMovie(image, publish=False, caption=None, display=True):
         what = "movie";
@@ -676,7 +676,8 @@ class Idv:
             #data = b64encode(data).decode('ascii');
             #img = '<img src="data:image/gif;base64,{0}">';
             if display:
-                return IPython.core.display.Image(data)
+                return  IPython.core.display.Image(data)
+
 
 class Repository:
     theRepository = None;
@@ -1184,7 +1185,8 @@ class RamaddaEntry(RepositoryEntry):
         self.url = url;
 
     def getFilePath(self):
-        return  self.getRepository().makeUrl("/entry/get?entryid=" + self.getId())
+        return self.url;
+##        return  self.getRepository().makeUrl("/entry/get?entryid=" + self.getId())
 
     def getDataPath(self):
         return self.makeOpendapUrl()
