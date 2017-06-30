@@ -39,8 +39,6 @@ import IPython
 
 
 
-
-
 try:
     from urllib.request import urlopen
     from urllib.parse import urlparse, urlencode, urljoin
@@ -52,16 +50,6 @@ except ImportError:
 idvDebug = 0;
 
 
-displayedItems = [];
-
-def doDisplay(comp):
-    """Call this to display a component that can later be cleared with the Clear button"""
-    global displayedItems;
-    display(comp);
-    displayedItems.append(comp);
-
-
-
 def readUrl(url):
     """Utility to read a URL. Returns the text of the result"""
     try:
@@ -69,16 +57,8 @@ def readUrl(url):
     except:
         print("Error reading url:" + url);
 
-
-
-
-
-
-
 def testit(line, cell=None):
     print( os.listdir("."));
-
-
 
 
 ##
@@ -86,6 +66,7 @@ def testit(line, cell=None):
 ##
 
 def idvHelp(line, cell=None):
+    DrilsdownUI.status("");
     html =  "<pre>idvHelp  Show this help message<br>" + \
     "runIdv<br>" + \
     "makeUI<br>" +\
@@ -101,11 +82,11 @@ def idvHelp(line, cell=None):
     "setRamadda <ramadda url to a Drilsdown case study><br>" +\
     "createCaseStudy <case study name><br>" +\
     "setBBOX &lt;north west south east&gt; No arguments to clear the bbox<br></pre>";
-    doDisplay(HTML(html));
+    DrilsdownUI.doDisplay(HTML(html));
 
 def runIdv(line = None, cell=None):
     """Magic hook to start the IDV"""
-    Idv.runIdv();
+    Idv.runIdv(fromUser=True);
 
 
 def loadCatalog(line, cell=None):
@@ -215,6 +196,9 @@ def setBBOX(line, cell=None):
     Idv.setBBOX(line);
 
 
+def makeUI(line):
+    DrilsdownUI.makeUI();
+
 
 def load_ipython_extension(shell):
     """Define the magics"""
@@ -235,11 +219,6 @@ def load_ipython_extension(shell):
     shell.register_magic_function(publishBundle, magicType);
     shell.register_magic_function(publishNotebook, magicType);
 
-
-
-
-def makeUI(line):
-    DrilsdownUI.makeUI();
 
 
 class DrilsdownUI:
@@ -314,6 +293,7 @@ class DrilsdownUI:
             disabled=False);
 
         repositorySelector.observe(DrilsdownUI.repositorySelectorChanged,names='value');
+        DrilsdownUI.statusLabel = Label("");
         display(VBox(
                 [HTML("<h3>iPython-IDV Control Panel</h3>"),
                     HBox([HTML("<b>Resources:</b>"),
@@ -332,8 +312,27 @@ class DrilsdownUI:
                     HBox([
 #Label("Outputs append below until Cleared:"),
                           DrilsdownUI.makeButton("Clear Outputs",DrilsdownUI.clearClicked),
-                          DrilsdownUI.makeButton("Commands Help",idvHelp)]),
+                          DrilsdownUI.makeButton("Commands Help",idvHelp),
+                          DrilsdownUI.statusLabel
+]),
+                 
                     ]));
+
+
+    displayedItems = [];
+    @staticmethod
+    def doDisplay(comp):
+        """Call this to display a component that can later be cleared with the Clear button"""
+        display(comp);
+        DrilsdownUI.displayedItems.append(comp);
+
+
+
+
+    @staticmethod
+    def status(text):
+        DrilsdownUI.statusLabel.value = text;
+
     @staticmethod
     def makeButton(label, callback, extra=None):
         """Utility to make a button widget"""
@@ -352,12 +351,19 @@ class DrilsdownUI:
     def handleSearch(widget):
         type = widget.type;
         value  =  widget.value.replace(" ","%20");
-        entries = Repository.theRepository.doSearch(value, type);
-        Repository.theRepository.displayEntries("<b>Search Results:</b> " + widget.value +" <br>", entries);
+        if hasattr(Repository.theRepository,"doSearch"):
+            DrilsdownUI.status("Searching...");
+            entries = Repository.theRepository.doSearch(value, type);
+            Repository.theRepository.displayEntries("<b>Search Results:</b> " + widget.value +" <br>", entries);
+            DrilsdownUI.status("");
+        else:
+            DrilsdownUI.status("Search not available");
+
+        
 
     @staticmethod
     def runIDVClicked(b):
-        runIdv("");
+        Idv.runIdv(fromUser=True);
 
     @staticmethod
     def saveBundleClicked(b):
@@ -368,17 +374,23 @@ class DrilsdownUI:
 
     @staticmethod
     def makeImageClicked(b):
+        DrilsdownUI.status("");
         extra = "";
         if b.extra.value:
             extra = "-publish"
-        makeImage(extra);
+        image = makeImage(extra);
+        if image is not None:
+            DrilsdownUI.doDisplay(image);
 
     @staticmethod
     def makeMovieClicked(b):
+        DrilsdownUI.status("");
         if b.extra.value:
-            Idv.makeMovie(True);
+            movie = Idv.makeMovie(True);
         else:
-            Idv.makeMovie(False);
+            movie = Idv.makeMovie(False);
+        if movie is not None:
+            DrilsdownUI.doDisplay(movie);
 
     @staticmethod
     def loadBundleClicked(b):
@@ -386,7 +398,7 @@ class DrilsdownUI:
 
     @staticmethod
     def viewUrlClicked(b):
-        doDisplay(HTML("<a target=ramadda href=" + b.url +">" + b.name+"</a>"));
+        DrilsdownUI.doDisplay(HTML("<a target=ramadda href=" + b.url +">" + b.name+"</a>"));
         display(IFrame(src=b.url,width=800, height=400));
 
 
@@ -427,11 +439,13 @@ class DrilsdownUI:
 
     @staticmethod
     def clearClicked(b):
+        DrilsdownUI.status("");
         clear_output();
-        global displayedItems;
-        for i in range(len(displayedItems)):
-            displayedItems[i].close();
-
+        for i in range(len(DrilsdownUI.displayedItems)):
+            item  = DrilsdownUI.displayedItems[i];
+            if hasattr(item,"close"):
+                item.close();
+        DrilsdownUI.displayedItems = [];
 
 
 
@@ -460,10 +474,12 @@ class Idv:
 
 
     @staticmethod
-    def runIdv():
+    def runIdv(fromUser=False):
         """Check if the IDV is running"""
         idvRunning = Idv.idvPing();
         if  idvRunning:
+            if fromUser:
+                DrilsdownUI.status("IDV is running");
             return;
 #Check if the env is defined
         if "IDV_HOME" not in os.environ:
@@ -473,14 +489,16 @@ class Idv:
         print ("Starting IDV: " + path);
         subprocess.Popen([path]) 
     #Give the IDV a chance to get going
+        suffix = "";
         for x in range(0, 60):
             if Idv.idvPing() != None:
-                print("IDV started");
+                DrilsdownUI.status("IDV started");
                 return;
-            if x % 5 == 0:
-                print ("Waiting on the IDV");
+            if x % 2 == 0:
+                DrilsdownUI.status("Waiting on the IDV " + suffix);
+                suffix = suffix+".";
             time.sleep(1);
-        print ("IDV failed to start (or is slow in starting)");
+        DrilsdownUI.status("IDV failed to start (or is slow in starting)");
 
     @staticmethod
     def idvCall(command, args=None):
@@ -488,7 +506,7 @@ class Idv:
         Will start up the IDV if needed then call the command
         If args is non-null then this is a map of the url arguments to pass to the IDV
         """
-        runIdv();
+        Idv.runIdv(fromUser = False);
 #TODO: add better error handling 
         try:
             url = Idv.idvBaseUrl +command;
@@ -570,11 +588,10 @@ class Idv:
         if result == None:
             print("save failed");
             return;
-        print(filename);
         if os.path.isfile(filename):
-            print ("bundle saved:" + filename);
+            DrilsdownUI.status ("Bundle saved:" + filename);
             return FileLink(filename)
-        print ("bundle not saved");
+        DrilsdownUI.status("Bundle not saved");
 
 
     @staticmethod
@@ -594,11 +611,10 @@ class Idv:
             east = float(bbox[3])+padding;
             extra2 += '<pause/><center north="' + repr(north) +'" west="' + repr(west) +'" south="'  + repr(south) +'" east="' + repr(east) +'" />';
         isl = '<isl>\n<bundle file="' + bundleUrl +'" ' + extra1 +'/>' + extra2 +'\n</isl>';
-        print(isl);
         if Idv.idvCall(Idv.cmd_loadisl, {"isl": isl}) == None:
-            print("loadBundle failed");
+            DrilsdownUI.status("Bundle load failed");
             return;
-##        print("bundle loaded");
+        DrilsdownUI.status("Bundle loaded");
 
 
     @staticmethod
@@ -632,6 +648,7 @@ class Idv:
         what = "movie";
         if image:
             what = "image";
+        DrilsdownUI.status("Making " + what +"...");
         selfPublish=False
         idvPublish = False;
         parent=None
@@ -666,17 +683,18 @@ class Idv:
             result = Idv.idvCall(Idv.cmd_loadisl, {"isl": isl});
             if idvPublish:
                 if result == None or result.strip()=="":
-                    print("make " + what + " failed");
+                    DrilsdownUI.status("make " + what + " failed");
                     return;
-                print("Publication successful");
-                print("URL: " + result);
+                print("Publication successful " + "URL: " + result);
             if selfPublish:
                 ramadda.publish(name,file=f.name, parent=parent);
             data = open(f.name, "rb").read()
             #data = b64encode(data).decode('ascii');
             #img = '<img src="data:image/gif;base64,{0}">';
             if display:
+                DrilsdownUI.status("");
                 return  IPython.core.display.Image(data)
+        DrilsdownUI.status("");
 
 
 class Repository:
@@ -697,13 +715,6 @@ class Repository:
     def getId(self):
         return self.entryId;
 
-
-
-
-    def doSearch(self, value, type=None):
-        print("Search not available");
-
-    
     def displayEntries(self, label="Entries", entries=[]):
         cnt = 0;
         indent = HTML("&nbsp;&nbsp;&nbsp;");
@@ -768,9 +779,9 @@ class Repository:
                     row.append(HTML('<a target=_filedownload href="' + entry.path +'">' + entry.path +'</>'));
             rows.append(HBox(row));
 
-        doDisplay(VBox(rows));
+        DrilsdownUI.doDisplay(VBox(rows));
         if cnt == 0:
-            doDisplay(HTML("<b>No entries found</b>"));
+            DrilsdownUI.doDisplay(HTML("<b>No entries found</b>"));
 
 
 class LocalFiles(Repository):
@@ -933,12 +944,6 @@ class TDS(Repository):
                 return name;
         return None;
 
-
-
-
-    def doSearch(self, value, type=None):
-        print("Search not supported for TDS repositories");
-        return [];
 
 
 class Ramadda(Repository):
