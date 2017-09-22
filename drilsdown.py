@@ -1,4 +1,4 @@
-# drillsdown.py
+
 
 #
 # Copy this into
@@ -17,11 +17,13 @@ import os;
 import os.path;
 import re;
 import subprocess;
+import json;
 from base64 import b64encode;
 from IPython.display import HTML;
 from IPython.display import Image;
 from IPython.display import IFrame;
 from IPython.display import display;
+from IPython.display import Javascript;
 from IPython.display import clear_output;
 from tempfile import NamedTemporaryFile;
 from IPython.display import FileLink;
@@ -36,7 +38,7 @@ from glob import glob
 from os import listdir
 from os.path import isfile, join
 import IPython 
-
+from IPython.lib import kernel
 
 
 try:
@@ -446,6 +448,7 @@ class DrilsdownUI:
             if hasattr(item,"close"):
                 item.close();
         DrilsdownUI.displayedItems = [];
+        clear_output();
 
 
 
@@ -454,13 +457,14 @@ class Idv:
     dataUrl = None;
     fileUrl = None;
 
+    path  = None;
+
 #These correspond to the commands in ucar.unidata.idv.IdvMonitor
     cmd_ping = "/ping";
     cmd_loadisl = "/loadisl";
 
 #The port is defined by the idv.monitorport = 8765 in the .unidata/idv/DefaultIdv/idv.properties
     idvBaseUrl = "http://127.0.0.1:8765";
-
 
     @staticmethod
     def idvPing():
@@ -472,6 +476,15 @@ class Idv:
         except:
             return None;
 
+    @staticmethod
+    def setPath(path):
+        """This function directly sets the path to the IDV executable"""
+        Idv.path = path;
+
+    @staticmethod
+    def setPort(port):
+        """This function sets the port the IDV listens on"""
+        Idv.idvBaseUrl = "http://127.0.0.1:" + port;
 
     @staticmethod
     def runIdv(fromUser=False):
@@ -481,11 +494,30 @@ class Idv:
             if fromUser:
                 DrilsdownUI.status("IDV is running");
             return;
+
+#path might have been set directly by setPath
+        path = Idv.path;
 #Check if the env is defined
-        if "IDV_HOME" not in os.environ:
-            print ("No IDV_HOME environment variable set");
-            return;
-        path = os.environ['IDV_HOME'] +"/runIDV";
+        if path is None:
+            if "IDV_HOME" not in os.environ:
+                print ("No IDV_HOME environment variable set");
+                Idv.printSetPath();
+                return;
+            path = os.environ['IDV_HOME'] +"/runIDV";
+            ##check for windows
+            if not os.path.isfile(path):
+                path = os.environ['IDV_HOME'] +"/runIDV.bat";
+            if not os.path.isfile(path):
+                print("Could not find an executable IDV script in:");
+                print(os.environ['IDV_HOME']);
+                Idv.printSetPath();
+                return;
+        else:
+            if not os.path.isfile(path):
+                print("IDV exectuable does not exist:");
+                print(path);
+                return;
+                
         print ("Starting IDV: " + path);
         subprocess.Popen([path]) 
     #Give the IDV a chance to get going
@@ -499,6 +531,14 @@ class Idv:
                 suffix = suffix+".";
             time.sleep(1);
         DrilsdownUI.status("IDV failed to start (or is slow in starting)");
+
+    @staticmethod
+    def printSetPath():
+        print("You can set the path to the IDV script with:")
+        print("from drilsdown import Idv");
+        print('Idv.setPath("/path to idv executable")');
+        print('#e.g.:');
+        print('Idv.setPath("/Applications/IDV_5.3u1/runIDV")');
 
     @staticmethod
     def idvCall(command, args=None):
@@ -531,13 +571,40 @@ class Idv:
             return;
         print("data loaded");
     
+
+    theNotebook = "xx";
+
+    def test():
+        Idv.theNotebook  = "yy";
+
+    def setname(name):
+        Idv.theNotebook  = name;
+        print("NAME = " +name);
+
+
+    @staticmethod
+    def getname():
+        ## A hack from https://stackoverflow.com/questions/12544056/how-do-i-get-the-current-ipython-notebook-name to get the 
+        ##name of the notebook file
+        connection_file_path = kernel.get_connection_file()
+        connection_file = os.path.basename(connection_file_path)
+        kernel_id = connection_file.split('-', 1)[1].split('.')[0]
+        response = requests.get('http://127.0.0.1:{port}/api/sessions'.format(port=8888))
+        matching = [s for s in json.loads(response.text) if s['kernel']['id'] == kernel_id]
+        if matching:
+            return os.getcwd() +"/" + matching[0]['notebook']['path'];
+        else:
+            None;
+
+
     @staticmethod
     def publishNotebook(filename):
-        ipython = get_ipython();
-        ipython.magic("notebook -e " + filename);
-        file = os.getcwd() + "/" + filename;
+##If we do this then the Javascript object shows up in the notebook
+##        js  = Javascript('IPython.notebook.save_checkpoint();');
+##        display(js);
+        file = Idv.getname();
         isl = '<isl><publish file="'  + file +'"/></isl>';
-        print("Check your IDV to publish the file");
+        DrilsdownUI.status("Make sure you do 'File->Save and Checkpoint'. Check your IDV to publish the file");
         result  = Idv.idvCall(Idv.cmd_loadisl, {"isl": isl});
         if result  is None:
             print("Publication failed");
