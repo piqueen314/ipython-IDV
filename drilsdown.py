@@ -25,6 +25,7 @@ from IPython.display import IFrame;
 from IPython.display import display;
 from IPython.display import Javascript;
 from IPython.display import clear_output;
+import tempfile;
 from tempfile import NamedTemporaryFile;
 from IPython.display import FileLink;
 import time;
@@ -519,7 +520,9 @@ class Idv:
                 return;
                 
         print ("Starting IDV: " + path);
-        subprocess.Popen([path]) 
+        cwd = os.path.dirname(path)
+        subprocess.Popen([path], cwd=cwd)
+        os.system(path); 
     #Give the IDV a chance to get going
         suffix = "";
         for x in range(0, 60):
@@ -594,6 +597,7 @@ class Idv:
         if matching:
             return os.getcwd() +"/" + matching[0]['notebook']['path'];
         else:
+            print("Could not find notebook filename");
             None;
 
 
@@ -603,6 +607,8 @@ class Idv:
 ##        js  = Javascript('IPython.notebook.save_checkpoint();');
 ##        display(js);
         file = Idv.getname();
+        if file is None:
+            return;
         isl = '<isl><publish file="'  + file +'"/></isl>';
         DrilsdownUI.status("Make sure you do 'File->Save and Checkpoint'. Check your IDV to publish the file");
         result  = Idv.idvCall(Idv.cmd_loadisl, {"isl": isl});
@@ -745,6 +751,7 @@ class Idv:
             extra2 +=    '<matte space="1"  background="black"/>';
         if name is None:
             name = caption;
+        print("tempfile.tempdir = " +   repr(tempfile.tempdir));
         with NamedTemporaryFile(suffix='.gif') as f:
             isl = '<isl><' + what +' combine="true" file="' + f.name +'"' + extra +'>' + extra2  +'</' + what +'></isl>';
             result = Idv.idvCall(Idv.cmd_loadisl, {"isl": isl});
