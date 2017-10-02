@@ -27,6 +27,8 @@ from IPython.display import Javascript;
 from IPython.display import clear_output;
 import tempfile;
 from tempfile import NamedTemporaryFile;
+from tempfile import gettempdir;
+
 from IPython.display import FileLink;
 import time;
 from IPython import get_ipython;
@@ -752,6 +754,8 @@ class Idv:
         if name is None:
             name = caption;
         print("tempfile.tempdir = " +   repr(tempfile.tempdir));
+        print("tempfile.gettempdir() = " +   repr(tempfile.gettempdir()));
+
         with NamedTemporaryFile(suffix='.gif') as f:
             isl = '<isl><' + what +' combine="true" file="' + f.name +'"' + extra +'>' + extra2  +'</' + what +'></isl>';
             result = Idv.idvCall(Idv.cmd_loadisl, {"isl": isl});
