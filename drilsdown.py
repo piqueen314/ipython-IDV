@@ -130,6 +130,44 @@ def makeImage(line, cell=None):
     skip = 0;
     publish = False;
     caption = None;
+    displayId = None;
+    for i in range(len(toks)):
+        if skip>0:
+            skip = skip-1;
+            continue;
+        tok  = toks[i].strip();
+        if tok == "":
+            continue;
+        if tok == "-publish":
+            publish = True;
+        elif tok == "-caption":
+            skip = 1;
+            caption = toks[i+1];
+        elif tok == "-display":
+            skip = 1;
+            displayId = toks[i+1];
+        elif tok == "-help":
+            print("%makeImage <-display displayid> <-caption caption> <-publish>");
+            return;
+        else:
+            print("Unknown argument:" + tok);
+            print("%makeImage <-display displayid> <-caption caption> <-publish>");
+            return;
+        
+    return Idv.makeImage(publish, caption, displayId = displayId);
+
+
+
+def publishNotebook(line, cell=None):
+    Idv.publishNotebook();
+
+
+
+def makeMovie(line, cell=None):
+    toks = line.split(" ");
+    skip = 0;
+    publish = False;
+    displayId = None;
     for i in range(len(toks)):
         if skip>0:
             skip = skip-1;
@@ -137,26 +175,11 @@ def makeImage(line, cell=None):
         tok  = toks[i];
         if tok == "-publish":
             publish = True;
-        elif tok == "-caption":
+        elif tok == "-display":
             skip = 1;
-            caption = toks[i+1];
-    return Idv.makeImage(publish, caption);
+            displayId = toks[i+1];
 
-
-
-def publishNotebook(line, cell=None):
-    filename = "notebook.ipynb";
-    if line != "" and line is not None:
-        filename = line;
-    Idv.publishNotebook(filename);
-
-
-
-def makeMovie(line, cell=None):
-    publish  = False;
-    if line == "-publish":
-        publish = True;
-    return Idv.makeMovie(publish);
+    return Idv.makeMovie(publish, displayId  = displayId);
 
 
 def setRamadda(line, cell=None):
@@ -310,6 +333,7 @@ class DrilsdownUI:
                             DrilsdownUI.makeButton("Make Image",DrilsdownUI.makeImageClicked, cbx),
                             DrilsdownUI.makeButton("Make Movie",DrilsdownUI.makeMovieClicked,cbx),
                             DrilsdownUI.makeButton("Save Bundle",DrilsdownUI.saveBundleClicked,cbx),
+                            DrilsdownUI.makeButton("Publish Notebook",Idv.publishNotebook),
                             cbx]),
 
 
@@ -594,7 +618,9 @@ class Idv:
         connection_file_path = kernel.get_connection_file()
         connection_file = os.path.basename(connection_file_path)
         kernel_id = connection_file.split('-', 1)[1].split('.')[0]
+        print("connection file:" + connection_file_path);
         response = requests.get('http://127.0.0.1:{port}/api/sessions'.format(port=8888))
+        print(response.text);
         matching = [s for s in json.loads(response.text) if s['kernel']['id'] == kernel_id]
         if matching:
             return os.getcwd() +"/" + matching[0]['notebook']['path'];
@@ -604,7 +630,7 @@ class Idv:
 
 
     @staticmethod
-    def publishNotebook(filename):
+    def publishNotebook(extra=None):
 ##If we do this then the Javascript object shows up in the notebook
 ##        js  = Javascript('IPython.notebook.save_checkpoint();');
 ##        display(js);
@@ -711,15 +737,15 @@ class Idv:
 
 
     @staticmethod
-    def makeMovie(publish=False, caption=None, display=True):
-        return Idv.makeImageOrMovie(False, publish, caption, display);
+    def makeMovie(publish=False, caption=None, display=True, displayId = None):
+        return Idv.makeImageOrMovie(False, publish, caption, display, displayId);
 
     @staticmethod
-    def makeImage(publish=False, caption=None, display=True):
-        return Idv.makeImageOrMovie(True, publish, caption, display);
+    def makeImage(publish=False, caption=None, display=True, displayId = None):
+        return Idv.makeImageOrMovie(True, publish, caption, display, displayId);
 
     @staticmethod
-    def makeImageOrMovie(image, publish=False, caption=None, display=True):
+    def makeImageOrMovie(image, publish=False, caption=None, display=True, displayId=None):
         what = "movie";
         if image:
             what = "image";
@@ -756,6 +782,8 @@ class Idv:
         print("tempfile.tempdir = " +   repr(tempfile.tempdir));
         print("tempfile.gettempdir() = " +   repr(tempfile.gettempdir()));
 
+        if displayId is not None:
+            extra += ' display="' + displayId +'" ';
         with NamedTemporaryFile(suffix='.gif') as f:
             isl = '<isl><' + what +' combine="true" file="' + f.name +'"' + extra +'>' + extra2  +'</' + what +'></isl>';
             result = Idv.idvCall(Idv.cmd_loadisl, {"isl": isl});
