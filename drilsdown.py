@@ -548,7 +548,7 @@ class Idv:
         print ("Starting IDV: " + path);
         cwd = os.path.dirname(path)
         subprocess.Popen([path], cwd=cwd)
-        os.system(path); 
+
     #Give the IDV a chance to get going
         suffix = "";
         for x in range(0, 60):
