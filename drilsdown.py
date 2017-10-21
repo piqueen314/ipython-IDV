@@ -784,9 +784,10 @@ class Idv:
 
         if displayId is not None:
             extra += ' display="' + displayId +'" ';
-        with NamedTemporaryFile(suffix='.gif') as f:
+        with NamedTemporaryFile(suffix='.gif', delete=False) as f:
             isl = '<isl><' + what +' combine="true" file="' + f.name +'"' + extra +'>' + extra2  +'</' + what +'></isl>';
             result = Idv.idvCall(Idv.cmd_loadisl, {"isl": isl});
+            f.seek(0)
             if idvPublish:
                 if result == None or result.strip()=="":
                     DrilsdownUI.status("make " + what + " failed");
@@ -795,6 +796,7 @@ class Idv:
             if selfPublish:
                 ramadda.publish(name,file=f.name, parent=parent);
             data = open(f.name, "rb").read()
+            f.close()
             #data = b64encode(data).decode('ascii');
             #img = '<img src="data:image/gif;base64,{0}">';
             if display:
