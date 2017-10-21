@@ -530,10 +530,10 @@ class Idv:
                 print ("No IDV_HOME environment variable set");
                 Idv.printSetPath();
                 return;
-            path = os.environ['IDV_HOME'] +"/runIDV";
+            path = os.path.join(os.environ['IDV_HOME'],"runIDV");
             ##check for windows
             if not os.path.isfile(path):
-                path = os.environ['IDV_HOME'] +"/runIDV.bat";
+                path = os.path.join(os.environ['IDV_HOME'],"runIDV.bat");
             if not os.path.isfile(path):
                 print("Could not find an executable IDV script in:");
                 print(os.environ['IDV_HOME']);
