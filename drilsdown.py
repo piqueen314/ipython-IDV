@@ -1,5 +1,3 @@
-
-
 #
 # Copy this into
 # ~/.ipython/extensions/
@@ -28,7 +26,6 @@ from IPython.display import clear_output;
 import tempfile;
 from tempfile import NamedTemporaryFile;
 from tempfile import gettempdir;
-
 from IPython.display import FileLink;
 import time;
 from IPython import get_ipython;
@@ -52,10 +49,10 @@ except ImportError:
     from urlparse import urlparse
     from urllib import urlopen, urlencode
 
-idvDebug = 0;
+idv_debug = 0;
 
 
-def readUrl(url):
+def read_url(url):
     """Utility to read a URL. Returns the text of the result"""
     try:
         return urlopen(url).read().decode("utf-8");
@@ -70,38 +67,38 @@ def testit(line, cell=None):
 ## Here are the magic commands
 ##
 
-def idvHelp(line, cell=None):
+def idv_help(line, cell=None):
     DrilsdownUI.status("");
-    html =  "<pre>idvHelp  Show this help message<br>" + \
-    "runIdv<br>" + \
-    "makeUI<br>" +\
-    "loadBundle <bundle url or file path><br>" + \
+    html =  "<pre>idv_help  Show this help message<br>" + \
+    "run_idv<br>" + \
+    "make_ui<br>" +\
+    "load_bundle <bundle url or file path><br>" + \
     "           If no bundle given and if setRamadda has been called the bundle will be fetched from RAMADDA<br>" +\
-    "loadBundleMakeImage <bundle url or file path><br>" +\
-    "loadCatalog Load the case study catalog into the IDV<br>" +\
-    "makeImage <-publish> <-caption ImageName> Capture an IDV image and optionally publish it to RAMADDA<br>" +\
-    "makeMovie <-publish> <-caption MovieName> Capture an IDV movie and optionally publish it to RAMADDA<br>" +\
-    "saveBundle <xidv or zidv filename> <-publish> - write out the bundle and optionally publish to RAMADDA<br>" +\
+    "load_bundle_make_image <bundle url or file path><br>" +\
+    "load_catalog Load the case study catalog into the IDV<br>" +\
+    "make_image <-publish> <-caption ImageName> Capture an IDV image and optionally publish it to RAMADDA<br>" +\
+    "make_movie <-publish> <-caption MovieName> Capture an IDV movie and optionally publish it to RAMADDA<br>" +\
+    "save_bundle <xidv or zidv filename> <-publish> - write out the bundle and optionally publish to RAMADDA<br>" +\
     "publishBundle  <xidv or zidv filename> - write out the bundle and publish it to RAMADDA<br>" +\
-    "publishNotebook <notebook file name> - publish the current notebook to RAMADDA via the IDV<br>" +\
+    "publish_notebook <notebook file name> - publish the current notebook to RAMADDA via the IDV<br>" +\
     "setRamadda <ramadda url to a Drilsdown case study><br>" +\
     "createCaseStudy <case study name><br>" +\
     "setBBOX &lt;north west south east&gt; No arguments to clear the bbox<br></pre>";
     DrilsdownUI.doDisplay(HTML(html));
 
-def runIdv(line = None, cell=None):
+def run_idv(line=None, cell=None):
     """Magic hook to start the IDV"""
-    Idv.runIdv(fromUser=True);
+    Idv.run_idv(fromUser=True);
 
 
-def loadCatalog(line, cell=None):
-    Idv.loadCatalog(line);
+def load_catalog(line, cell=None):
+    Idv.load_catalog(line);
 
-def loadBundleMakeImage(line, cell=None):
+def load_bundle_make_image(line, cell=None):
     loadBundle(line,cell);
     return makeImage(line,cell);
 
-def createCaseStudy(line, cell=None):
+def create_case_study(line, cell=None):
     url = Repository.theRepository.makeUrl("/entry/form?parentof=" + Repository.theRepository.entryId +"&type=type_drilsdown_casestudy&name=" + line);
     url = url.replace(" ","%20");
     print ("Go to this link to create the Case Study:");
@@ -109,11 +106,11 @@ def createCaseStudy(line, cell=None):
     print("Then call %setRamadda with the new Case Study URL");
 
 
-def loadData(line, cell=None, name = None):
-    Idv.loadData(line,name);
+def load_data(line, cell=None, name=None):
+    Idv.load_data(line,name);
     
 
-def loadBundle(line, cell=None):
+def load_bundle(line, cell=None):
     if line == None or line == "":
         if Repository.theRepository is not None:
             line = Repository.theRepository.makeUrl("/drilsdown/getbundle?entryid=" + Repository.theRepository.entryId);
@@ -122,10 +119,10 @@ def loadBundle(line, cell=None):
         print ("No bundle argument provided");
         return;
 
-    Idv.loadBundle(line);
+    Idv.load_bundle(line);
 
 
-def makeImage(line, cell=None):
+def make_image(line, cell=None):
     toks = line.split(" ");
     skip = 0;
     publish = False;
@@ -135,7 +132,7 @@ def makeImage(line, cell=None):
         if skip>0:
             skip = skip-1;
             continue;
-        tok  = toks[i].strip();
+        tok = toks[i].strip();
         if tok == "":
             continue;
         if tok == "-publish":
@@ -147,23 +144,23 @@ def makeImage(line, cell=None):
             skip = 1;
             displayId = toks[i+1];
         elif tok == "-help":
-            print("%makeImage <-display displayid> <-caption caption> <-publish>");
+            print("%make_image <-display displayid> <-caption caption> <-publish>");
             return;
         else:
             print("Unknown argument:" + tok);
-            print("%makeImage <-display displayid> <-caption caption> <-publish>");
+            print("%make_image <-display displayid> <-caption caption> <-publish>");
             return;
         
-    return Idv.makeImage(publish, caption, displayId = displayId);
+    return Idv.make_image(publish, caption, displayId = displayId);
 
 
 
-def publishNotebook(line, cell=None):
-    Idv.publishNotebook();
+def publish_notebook(line, cell=None):
+    Idv.publish_notebook();
 
 
 
-def makeMovie(line, cell=None):
+def make_movie(line, cell=None):
     toks = line.split(" ");
     skip = 0;
     publish = False;
@@ -172,44 +169,44 @@ def makeMovie(line, cell=None):
         if skip>0:
             skip = skip-1;
             continue;
-        tok  = toks[i];
+        tok = toks[i];
         if tok == "-publish":
             publish = True;
         elif tok == "-display":
             skip = 1;
             displayId = toks[i+1];
 
-    return Idv.makeMovie(publish, displayId  = displayId);
+    return Idv.make_movie(publish, displayId = displayId);
 
 
 def setRamadda(line, cell=None):
     """Set the ramadda to be used. The arg should be the normal /entry/view URL for a RAMADDA entry"""
-    lineToks  = line.split(" ");
+    lineToks = line.split(" ");
     shouldList =  len(lineToks)==1;
     line = lineToks[0];
     Repository.setRepository(Ramadda(line), shouldList);
 
 
 
-def listRepository(entryId = None, repository=None):
+def listRepository(entryId=None, repository=None):
     """List the entries held by the entry id"""
     if repository is None:
         repository = Repository.theRepository;
     repository.listEntry(entryId);
 
-def saveBundle(line, cell=None):
+def save_bundle(line, cell=None):
     extra = "";
     filename = "idv.xidv";
     publish = False;
     toks = line.split(" ");
     for i in range(len(toks)):
-        tok  = toks[i];
+        tok = toks[i];
         if tok!="":
             if tok == "-publish":
                 publish= True;
             else:
                 filename = tok;
-    Idv.saveBundle(filename, publish);
+    Idv.save_bundle(filename, publish);
 
 
 def publishBundle(line, cell=None):
@@ -224,28 +221,28 @@ def setBBOX(line, cell=None):
     Idv.setBBOX(line);
 
 
-def makeUI(line):
-    DrilsdownUI.makeUI();
+def make_ui(line):
+    DrilsdownUI.make_ui();
 
 
 def load_ipython_extension(shell):
     """Define the magics"""
     magicType = "line";
     shell.register_magic_function(testit, magicType);
-    shell.register_magic_function(idvHelp, magicType);
-    shell.register_magic_function(runIdv, magicType);
-    shell.register_magic_function(makeUI, magicType);
-    shell.register_magic_function(loadBundle, magicType);
-    shell.register_magic_function(loadBundleMakeImage, magicType);
-    shell.register_magic_function(loadCatalog, magicType);
-    shell.register_magic_function(makeImage, magicType);
-    shell.register_magic_function(makeMovie, magicType);
+    shell.register_magic_function(idv_help, magicType);
+    shell.register_magic_function(run_idv, magicType);
+    shell.register_magic_function(make_ui, magicType);
+    shell.register_magic_function(load_bundle, magicType);
+    shell.register_magic_function(load_bundle_make_image, magicType);
+    shell.register_magic_function(load_catalog, magicType);
+    shell.register_magic_function(make_image, magicType);
+    shell.register_magic_function(make_movie, magicType);
     shell.register_magic_function(setRamadda, magicType);
-    shell.register_magic_function(createCaseStudy, magicType);
+    shell.register_magic_function(create_case_study, magicType);
     shell.register_magic_function(setBBOX, magicType);
-    shell.register_magic_function(saveBundle, magicType);
+    shell.register_magic_function(save_bundle, magicType);
     shell.register_magic_function(publishBundle, magicType);
-    shell.register_magic_function(publishNotebook, magicType);
+    shell.register_magic_function(publish_notebook, magicType);
 
 
 
@@ -254,7 +251,7 @@ class DrilsdownUI:
     idToRepository = {};
 
     @staticmethod
-    def makeUI():
+    def make_ui():
         global repositories;
         nameMap = {};
         names = [];
@@ -312,7 +309,7 @@ class DrilsdownUI:
         allsearch.on_submit(DrilsdownUI.handleSearch);
         allsearch.type = "";
 
-        listBtn = DrilsdownUI.makeButton("List",DrilsdownUI.listRepositoryClicked);
+        listBtn = DrilsdownUI.make_button("List",DrilsdownUI.listRepositoryClicked);
         listBtn.entry = None;
     
         cbx = widgets.Checkbox(
@@ -329,19 +326,19 @@ class DrilsdownUI:
                             listBtn]),
                     HBox([HTML("<b>Search for:</b>"), search,
                           cssearch, gridsearch, allsearch]),
-                    HBox([DrilsdownUI.makeButton("Run IDV",DrilsdownUI.runIDVClicked),
-                            DrilsdownUI.makeButton("Make Image",DrilsdownUI.makeImageClicked, cbx),
-                            DrilsdownUI.makeButton("Make Movie",DrilsdownUI.makeMovieClicked,cbx),
-                            DrilsdownUI.makeButton("Save Bundle",DrilsdownUI.saveBundleClicked,cbx),
-                            DrilsdownUI.makeButton("Publish Notebook",Idv.publishNotebook),
+                    HBox([DrilsdownUI.make_button("Run IDV",DrilsdownUI.run_idv_clicked),
+                            DrilsdownUI.make_button("Make Image",DrilsdownUI.make_image_clicked, cbx),
+                            DrilsdownUI.make_button("Make Movie",DrilsdownUI.make_movie_clicked,cbx),
+                            DrilsdownUI.make_button("Save Bundle",DrilsdownUI.save_bundle_clicked,cbx),
+                            DrilsdownUI.make_button("Publish Notebook",Idv.publish_notebook),
                             cbx]),
 
 
 
                     HBox([
 #Label("Outputs append below until Cleared:"),
-                          DrilsdownUI.makeButton("Clear Outputs",DrilsdownUI.clearClicked),
-                          DrilsdownUI.makeButton("Commands Help",idvHelp),
+                          DrilsdownUI.make_button("Clear Outputs",DrilsdownUI.clearClicked),
+                          DrilsdownUI.make_button("Commands Help",idv_help),
                           DrilsdownUI.statusLabel
 ]),
                  
@@ -363,7 +360,7 @@ class DrilsdownUI:
         DrilsdownUI.statusLabel.value = text;
 
     @staticmethod
-    def makeButton(label, callback, extra=None):
+    def make_button(label, callback, extra=None):
         """Utility to make a button widget"""
         b = widgets.Button(
             description=label,
@@ -371,7 +368,7 @@ class DrilsdownUI:
             button_style='', # 'success', 'info', 'warning', 'danger' or ''
             tooltip=label,
             )
-        b.extra  = extra;
+        b.extra = extra;
         b.on_click(callback);
         return b;
 
@@ -379,7 +376,7 @@ class DrilsdownUI:
     @staticmethod
     def handleSearch(widget):
         type = widget.type;
-        value  =  widget.value.replace(" ","%20");
+        value =  widget.value.replace(" ","%20");
         if hasattr(Repository.theRepository,"doSearch"):
             DrilsdownUI.status("Searching...");
             entries = Repository.theRepository.doSearch(value, type);
@@ -391,39 +388,39 @@ class DrilsdownUI:
         
 
     @staticmethod
-    def runIDVClicked(b):
-        Idv.runIdv(fromUser=True);
+    def run_idv_clicked(b):
+        Idv.run_idv(fromUser=True);
 
     @staticmethod
-    def saveBundleClicked(b):
+    def save_bundle_clicked(b):
         extra = "";
         if b.extra.value == True:
             extra = "-publish"
-        saveBundle(extra);
+        save_bundle(extra);
 
     @staticmethod
-    def makeImageClicked(b):
+    def make_image_clicked(b):
         DrilsdownUI.status("");
         extra = "";
         if b.extra.value:
             extra = "-publish"
-        image = makeImage(extra);
+        image = make_image(extra);
         if image is not None:
             DrilsdownUI.doDisplay(image);
 
     @staticmethod
-    def makeMovieClicked(b):
+    def make_movie_clicked(b):
         DrilsdownUI.status("");
         if b.extra.value:
-            movie = Idv.makeMovie(True);
+            movie = Idv.make_movie(True);
         else:
-            movie = Idv.makeMovie(False);
+            movie = Idv.make_movie(False);
         if movie is not None:
             DrilsdownUI.doDisplay(movie);
 
     @staticmethod
-    def loadBundleClicked(b):
-        loadBundle(b.entry.getFilePath());
+    def load_bundle_clicked(b):
+        load_bundle(b.entry.getFilePath());
 
     @staticmethod
     def viewUrlClicked(b):
@@ -432,21 +429,21 @@ class DrilsdownUI:
 
 
     @staticmethod
-    def loadDataClicked(b):
-        loadData(b.entry.getDataPath(), None, b.name);
+    def load_data_clicked(b):
+        load_data(b.entry.getDataPath(), None, b.name);
 
 
     @staticmethod
-    def setDataClicked(b):
-        url  = b.entry.getDataPath();
-        Idv.dataUrl = url;
-        print('To access the data use the variable: Idv.dataUrl or:\n' + url);
+    def set_data_clicked(b):
+        url = b.entry.getDataPath();
+        Idv.data_url = url;
+        print('To access the data use the variable: Idv.data_url or:\n' + url);
 
     @staticmethod
     def setUrlClicked(b):
-        url  = b.entry.makeGetFileUrl();
-        Idv.fileUrl = url;
-        print('To access the URL use the variable: Idv.fileUrl or:\n' + url);
+        url = b.entry.makeGetFileUrl();
+        Idv.file_url = url;
+        print('To access the URL use the variable: Idv.file_url or:\n' + url);
 
     @staticmethod
     def listRepositoryClicked(b):
@@ -457,8 +454,9 @@ class DrilsdownUI:
 
 
     @staticmethod
-    def loadCatalogClicked(b):
-        loadCatalog(b.url);
+    def load_catalog_clicked(b):
+        load_catalog(b.url);
+
 
     @staticmethod
     def repositorySelectorChanged(s):
@@ -471,7 +469,7 @@ class DrilsdownUI:
         DrilsdownUI.status("");
         clear_output();
         for i in range(len(DrilsdownUI.displayedItems)):
-            item  = DrilsdownUI.displayedItems[i];
+            item = DrilsdownUI.displayedItems[i];
             if hasattr(item,"close"):
                 item.close();
         DrilsdownUI.displayedItems = [];
@@ -481,25 +479,40 @@ class DrilsdownUI:
 
 class Idv:
     bbox = None;
-    dataUrl = None;
-    fileUrl = None;
-
-    path  = None;
+    data_url = None;
+    file_url = None;
+    path = None;
 
 #These correspond to the commands in ucar.unidata.idv.IdvMonitor
     cmd_ping = "/ping";
     cmd_loadisl = "/loadisl";
 
+    base_url = None;
+
 #The port is defined by the idv.monitorport = 8765 in the .unidata/idv/DefaultIdv/idv.properties
-    idvBaseUrl = "http://127.0.0.1:8765";
+    base_urls = ["http://127.0.0.1:8788","http://127.0.0.1:8765"];
 
     @staticmethod
-    def idvPing():
-        """This function checks if the IDV is running"""
+    def get_base_url():
+        if Idv.base_url is not None:
+            return Idv.base_url;
+#Try the different ports
+        for url in Idv.base_urls:
+            try:
+                urlopen(url +Idv.cmd_ping).read();
+                Idv.base_url = url;
+#                print("Idv base url:"+ url);
+                return Idv.base_url;
+            except:
+                dummy=None;
+        return None;
 
-#NOTE: Don't call idvCall here because idvCall calls runIdv which calls ping
+    @staticmethod
+    def idv_ping():
+        """This function checks if the IDV is running"""
+#NOTE: Don't call idv_call here because idv_call calls run_idv which calls ping
         try:
-            return  urlopen(Idv.idvBaseUrl +Idv.cmd_ping).read();
+            return  urlopen(Idv.get_base_url() +Idv.cmd_ping).read();
         except:
             return None;
 
@@ -511,12 +524,28 @@ class Idv:
     @staticmethod
     def setPort(port):
         """This function sets the port the IDV listens on"""
-        Idv.idvBaseUrl = "http://127.0.0.1:" + port;
+        Idv.base_url = "http://127.0.0.1:" + port;
 
     @staticmethod
-    def runIdv(fromUser=False):
+    def sniff_out_path():
+        roots = ["/Applications","C:\\Program Files"];
+        majors = ["IDV_6","IDV_5"];
+        dots= ["9","8","7","6","5","4","3","2","1"];
+        minors = ["u10","u9","u8","u7","u6","u5","u4","u3","u2","u1",""];
+        for root in roots:
+            for major in majors:
+                for dot in dots:
+                    for minor in minors:
+                        dir = os.path.join(root,major + "." + dot + minor);
+             #           print(dir);
+                        if os.path.isdir(dir):
+                            return dir;
+        return None;
+
+    @staticmethod
+    def run_idv(fromUser=False):
         """Check if the IDV is running"""
-        idvRunning = Idv.idvPing();
+        idvRunning = Idv.idv_ping()
         if  idvRunning:
             if fromUser:
                 DrilsdownUI.status("IDV is running");
@@ -526,18 +555,24 @@ class Idv:
         path = Idv.path;
 #Check if the env is defined
         if path is None:
-            if "IDV_HOME" not in os.environ:
+            idvDir = None;
+            if "IDV_HOME"  in os.environ:
+                idvDir = os.environ['IDV_HOME'];
+            else:
+                idvDir = Idv.sniff_out_path();
+
+            if idvDir is None:
                 print ("No IDV_HOME environment variable set");
-                Idv.printSetPath();
+                Idv.print_set_path();
                 return;
-            path = os.path.join(os.environ['IDV_HOME'],"runIDV");
+            path = os.path.join(idvDir,"runIDV");
             ##check for windows
             if not os.path.isfile(path):
-                path = os.path.join(os.environ['IDV_HOME'],"runIDV.bat");
+                path = os.path.join(idvDir,"runIDV.bat");
             if not os.path.isfile(path):
                 print("Could not find an executable IDV script in:");
-                print(os.environ['IDV_HOME']);
-                Idv.printSetPath();
+                print(idvDir);
+                Idv.print_set_path();
                 return;
         else:
             if not os.path.isfile(path):
@@ -552,7 +587,7 @@ class Idv:
     #Give the IDV a chance to get going
         suffix = "";
         for x in range(0, 60):
-            if Idv.idvPing() != None:
+            if Idv.idv_ping() != None:
                 DrilsdownUI.status("IDV started");
                 return;
             if x % 2 == 0:
@@ -562,7 +597,7 @@ class Idv:
         DrilsdownUI.status("IDV failed to start (or is slow in starting)");
 
     @staticmethod
-    def printSetPath():
+    def print_set_path():
         print("You can set the path to the IDV script with:")
         print("from drilsdown import Idv");
         print('Idv.setPath("/path to idv executable")');
@@ -570,33 +605,33 @@ class Idv:
         print('Idv.setPath("/Applications/IDV_5.3u1/runIDV")');
 
     @staticmethod
-    def idvCall(command, args=None):
+    def idv_call(command, args=None):
         """
         Will start up the IDV if needed then call the command
         If args is non-null then this is a map of the url arguments to pass to the IDV
         """
-        Idv.runIdv(fromUser = False);
+        Idv.run_idv(fromUser = False);
 #TODO: add better error handling 
         try:
-            url = Idv.idvBaseUrl +command;
+            url = Idv.get_base_url() +command;
             if args:
                 url += "?" + urlencode(args);
-            if idvDebug:
+            if idv_debug:
                 print("Calling " + url);
-            html  = urlopen(url).read();
+            html = urlopen(url).read();
             return html.decode("utf-8");
         except:
             return None;
 
     @staticmethod
-    def loadData(url, name=None):
+    def load_data(url, name=None):
         extra1 = "";
         extra2 = "";
         if name  is not None:
             extra1 += ' name="' + name +'" ';
         isl = '<isl>\n<datasource url="' + url +'" ' + extra1 +'/>' + extra2 +'\n</isl>';
-        if Idv.idvCall(Idv.cmd_loadisl, {"isl": isl}) == None:
-            print("loadData failed");
+        if Idv.idv_call(Idv.cmd_loadisl, {"isl": isl}) == None:
+            print("load_data failed");
             return;
         print("data loaded");
     
@@ -604,10 +639,10 @@ class Idv:
     theNotebook = "xx";
 
     def test():
-        Idv.theNotebook  = "yy";
+        Idv.theNotebook = "yy";
 
     def setname(name):
-        Idv.theNotebook  = name;
+        Idv.theNotebook = name;
         print("NAME = " +name);
 
 
@@ -630,16 +665,16 @@ class Idv:
 
 
     @staticmethod
-    def publishNotebook(extra=None):
+    def publish_notebook(extra=None):
 ##If we do this then the Javascript object shows up in the notebook
-##        js  = Javascript('IPython.notebook.save_checkpoint();');
+##        js = Javascript('IPython.notebook.save_checkpoint();');
 ##        display(js);
         file = Idv.getname();
         if file is None:
             return;
         isl = '<isl><publish file="'  + file +'"/></isl>';
         DrilsdownUI.status("Make sure you do 'File->Save and Checkpoint'. Check your IDV to publish the file");
-        result  = Idv.idvCall(Idv.cmd_loadisl, {"isl": isl});
+        result = Idv.idv_call(Idv.cmd_loadisl, {"isl": isl});
         if result  is None:
             print("Publication failed");
             return;
@@ -665,27 +700,27 @@ class Idv:
 
 
     @staticmethod
-    def loadCatalog(url = None):
-        if url is  None or url  == "":
+    def load_catalog(url=None):
+        if url is  None or url == "":
             url = Repository.theRepository.makeUrl("/entry/show?parentof=" + Repository.theRepository.entryId +"&amp;output=thredds.catalog");
         else:
             url = url.replace("&","&amp;");
         isl = '<isl>\n<loadcatalog url="' + url+'"/></isl>';
-        if Idv.idvCall(Idv.cmd_loadisl, {"isl": isl}) == None:
-            print("loadCatalog failed");
+        if Idv.idv_call(Idv.cmd_loadisl, {"isl": isl}) == None:
+            print("load_catalog failed");
             return;
 
         print("Catalog loaded");
 
 
     @staticmethod
-    def saveBundle(filename, publish=False):
+    def save_bundle(filename, publish=False):
         extra = "";
         filename = "idv.xidv";
         if publish:
             extra +=' publish="true" '
         isl = '<isl><save file="' + filename +'"' + extra +'/></isl>';
-        result = Idv.idvCall(Idv.cmd_loadisl, {"isl": isl});
+        result = Idv.idv_call(Idv.cmd_loadisl, {"isl": isl});
         if result == None:
             print("save failed");
             return;
@@ -696,7 +731,7 @@ class Idv:
 
 
     @staticmethod
-    def loadBundle(bundleUrl, bbox=None):
+    def load_bundle(bundleUrl, bbox=None):
         extra1 = "";
         extra2 = "";
         if bbox is  None:
@@ -712,7 +747,7 @@ class Idv:
             east = float(bbox[3])+padding;
             extra2 += '<pause/><center north="' + repr(north) +'" west="' + repr(west) +'" south="'  + repr(south) +'" east="' + repr(east) +'" />';
         isl = '<isl>\n<bundle file="' + bundleUrl +'" ' + extra1 +'/>' + extra2 +'\n</isl>';
-        if Idv.idvCall(Idv.cmd_loadisl, {"isl": isl}) == None:
+        if Idv.idv_call(Idv.cmd_loadisl, {"isl": isl}) == None:
             DrilsdownUI.status("Bundle load failed");
             return;
         DrilsdownUI.status("Bundle loaded");
@@ -722,7 +757,7 @@ class Idv:
     def publishBundle(filename):
         extra = " publish=\"true\" ";
         isl = '<isl><save file="' + filename +'"' + extra +'/></isl>';
-        result = Idv.idvCall(Idv.cmd_loadisl, {"isl": isl});
+        result = Idv.idv_call(Idv.cmd_loadisl, {"isl": isl});
         if result is None:
             print("save failed");
             return;
@@ -737,15 +772,15 @@ class Idv:
 
 
     @staticmethod
-    def makeMovie(publish=False, caption=None, display=True, displayId = None):
-        return Idv.makeImageOrMovie(False, publish, caption, display, displayId);
+    def make_movie(publish=False, caption=None, display=True, displayId=None):
+        return Idv.make_imageOrMovie(False, publish, caption, display, displayId);
 
     @staticmethod
-    def makeImage(publish=False, caption=None, display=True, displayId = None):
-        return Idv.makeImageOrMovie(True, publish, caption, display, displayId);
+    def make_image(publish=False, caption=None, display=True, displayId=None):
+        return Idv.make_imageOrMovie(True, publish, caption, display, displayId);
 
     @staticmethod
-    def makeImageOrMovie(image, publish=False, caption=None, display=True, displayId=None):
+    def make_imageOrMovie(image, publish=False, caption=None, display=True, displayId=None):
         what = "movie";
         if image:
             what = "image";
@@ -759,7 +794,7 @@ class Idv:
         ramadda =  Repository.theRepository;
         if type(publish) is bool:
             if publish:
-                idvPublish  = True;
+                idvPublish = True;
                 extra = " publish=\"true\" ";
         elif publish is not None:
             selfPublish = True;
@@ -779,14 +814,12 @@ class Idv:
             extra2 +=    '<matte space="1"  background="black"/>';
         if name is None:
             name = caption;
-        print("tempfile.tempdir = " +   repr(tempfile.tempdir));
-        print("tempfile.gettempdir() = " +   repr(tempfile.gettempdir()));
 
         if displayId is not None:
             extra += ' display="' + displayId +'" ';
         with NamedTemporaryFile(suffix='.gif', delete=False) as f:
             isl = '<isl><' + what +' combine="true" file="' + f.name +'"' + extra +'>' + extra2  +'</' + what +'></isl>';
-            result = Idv.idvCall(Idv.cmd_loadisl, {"isl": isl});
+            result = Idv.idv_call(Idv.cmd_loadisl, {"isl": isl});
             f.seek(0)
             if idvPublish:
                 if result == None or result.strip()=="":
@@ -832,11 +865,11 @@ class Repository:
                 break;
             cnt = cnt+1;
             entry = entries[i];
-            name  = entry.getName();
+            name = entry.getName();
             id = entry.getId();
             icon = entry.getIcon();
             fullName = name;
-            maxLength  = 25;
+            maxLength = 25;
             if len(name)>maxLength:
                 name = name[:maxLength-len(name)];
             name = name.ljust(maxLength," ");
@@ -844,38 +877,38 @@ class Repository:
             row = [];
             if entry.getUrl() is not None:
                 href = self.makeEntryHref(id,  name, icon, fullName);
-                href  = "<span style=font-family:monospace;>" + href +"</span>";
+                href = "<span style=font-family:monospace;>" + href +"</span>";
                 href = HTML(href);
                 row = [indent, href];
             else:
-                label  = "<span style=font-family:monospace;>" + name +"</span>";
+                label = "<span style=font-family:monospace;>" + name +"</span>";
                 row = [indent, HTML(label)];
 
             if entry.isBundle():
-                b  = DrilsdownUI.makeButton("Load bundle",DrilsdownUI.loadBundleClicked);
+                b = DrilsdownUI.make_button("Load bundle",DrilsdownUI.load_bundle_clicked);
                 b.entry = entry;
                 row.append(b);
                 entry.addDisplayWidget(row);
             elif entry.isGrid():
-                b  = DrilsdownUI.makeButton("Load data",DrilsdownUI.loadDataClicked);
+                b = DrilsdownUI.make_button("Load data",DrilsdownUI.load_data_clicked);
                 b.name =fullName;
-                b.entry  = entry;
+                b.entry = entry;
                 row.append(b);
-                b  = DrilsdownUI.makeButton("Set data",DrilsdownUI.setDataClicked);
-                b.entry  = entry;
+                b = DrilsdownUI.make_button("Set data",DrilsdownUI.set_data_clicked);
+                b.entry = entry;
                 row.append(b);
             elif entry.isGroup():
-                b  = DrilsdownUI.makeButton("List",DrilsdownUI.listRepositoryClicked);
+                b = DrilsdownUI.make_button("List",DrilsdownUI.listRepositoryClicked);
                 b.entry = entry;
                 row.append(b);
                 catalogUrl = entry.getCatalogUrl();
                 if catalogUrl is not None:
-                    loadCatalog  = DrilsdownUI.makeButton("Load Catalog",DrilsdownUI.loadCatalogClicked);
-                    loadCatalog.url = catalogUrl;
-                    row.append(loadCatalog);
+                    load_catalog = DrilsdownUI.make_button("Load Catalog",DrilsdownUI.load_catalog_clicked);
+                    load_catalog.url = catalogUrl;
+                    row.append(load_catalog);
             else:
                 if entry.getUrl() is not None:
-                    b  = DrilsdownUI.makeButton("View",DrilsdownUI.viewUrlClicked);
+                    b = DrilsdownUI.make_button("View",DrilsdownUI.viewUrlClicked);
                     b.url = self.makeUrl("/entry/show?entryid=" + id);
                     b.name = name;
                     row.append(b);
@@ -917,13 +950,13 @@ class LocalFiles(Repository):
     def getBase(self):
         return self.dir;
 
-    def doList(self, dir = None, display=False, label="Entries"):
+    def doList(self, dir=None, display=False, label="Entries"):
         """make a list of RamaddaEntry objects that are children of the given entryId"""
         if dir is None:
             dir = self.dir;
         files =  os.listdir(dir);
         entries = [];
-        prefix  = dir+"/";
+        prefix = dir+"/";
         if prefix == "./":
             prefix = "";
         for i in range(len(files)):
@@ -937,7 +970,7 @@ class LocalFiles(Repository):
 
     def doSearch(self, value, type=None):
         """Do a search for the text value and (optionally) the entry type. Return a list of RamaddaEntry objects"""
-        self.searchCnt  = 0;
+        self.searchCnt = 0;
 ##        print("Search not supported for local files");
         files = [];
         self.doSearchInner(value,self.dir, files, type);
@@ -958,14 +991,14 @@ class LocalFiles(Repository):
                 if type is not None:
                     if type == "type_idv_bundle":
                         if not File.endswith(".xidv") and not File.endswith(".zidv"):
-                            ok  = False;
+                            ok = False;
                         
                     if type == "type_drilsdown_casestudy":
                         if not os.path.isdir(dir +"/" + file):
                             ok = False;
                     if type =="cdm_grid":
                         if not File.endswith(".nc"):
-                            ok  =False;
+                            ok =False;
                 if ok:
                     list.append(FileEntry(self,dir+"/" + file));
             if os.path.isdir(dir +"/" + file):
@@ -975,7 +1008,7 @@ class LocalFiles(Repository):
 class TDS(Repository):
     def __init__(self, url,  name=None):
         self.url = url;
-        catalog =  readUrl(url);
+        catalog =  read_url(url);
         if name is not None:
             self.name = name;
         else:
@@ -997,11 +1030,11 @@ class TDS(Repository):
     def getBase(self):
         return self.url;
 
-    def doList(self, url = None, display=False, label="Entries"):
+    def doList(self, url=None, display=False, label="Entries"):
         """make a list of RamaddaEntry objects that are children of the given entryId"""
         if url is None:
             url = self.url;
-        catalog =  readUrl(url);
+        catalog =  read_url(url);
         root = xml.etree.ElementTree.fromstring(catalog);
         entries= [];
         for child in root:
@@ -1067,7 +1100,7 @@ class Ramadda(Repository):
         if name is not None:
             self.name = name;
         else:
-            toks =  readUrl(self.makeUrl("/entry/show?output=entry.csv&escapecommas=true&fields=name,icon&entryid=" + self.entryId)).split("\n")[1].split(",");
+            toks =  read_url(self.makeUrl("/entry/show?output=entry.csv&escapecommas=true&fields=name,icon&entryid=" + self.entryId)).split("\n")[1].split(",");
             self.name =   toks[0].replace("_comma_",",");
 
 
@@ -1085,9 +1118,9 @@ class Ramadda(Repository):
             entryId = self.entryId;
         """List the entries held by the entry id"""
 #        print(self.makeUrl("/entry/show?output=entry.csv&escapecommas=true&fields=name,icon&entryid=" + entryId));
-        toks =  readUrl(self.makeUrl("/entry/show?output=entry.csv&escapecommas=true&fields=name,icon&entryid=" + entryId)).split("\n")[1].split(",");
+        toks =  read_url(self.makeUrl("/entry/show?output=entry.csv&escapecommas=true&fields=name,icon&entryid=" + entryId)).split("\n")[1].split(",");
         baseName =  toks[0];
-        baseName  = baseName.replace("_comma_",",");
+        baseName = baseName.replace("_comma_",",");
         icon =  toks[1];
         entries = self.doList(entryId);
         self.displayEntries("<b>" + "<img src=" + self.host + icon+"> " + "<a target=self href=" +self.base +"/entry/show?entryid=" + entryId +">" + baseName+"</a></b><br>", entries);
@@ -1095,11 +1128,11 @@ class Ramadda(Repository):
 
 
 
-    def doList(self, entryId = None, display=False, label="Entries"):
+    def doList(self, entryId=None, display=False, label="Entries"):
         """make a list of RamaddaEntry objects that are children of the given entryId"""
         if entryId is None:
             entryId = self.entryId;
-        csv = readUrl(self.makeUrl("/entry/show?entryid=" + entryId +"&output=default.csv&escapecommas=true&fields=name,id,type,icon,url,size&orderby=name"));
+        csv = read_url(self.makeUrl("/entry/show?entryid=" + entryId +"&output=default.csv&escapecommas=true&fields=name,id,type,icon,url,size&orderby=name"));
         entries = self.makeEntries(csv);
         if display:
             self.displayEntries(label, entries);
@@ -1113,7 +1146,7 @@ class Ramadda(Repository):
             url = self.makeUrl("/search/do?output=default.csv&escapecommas=true&fields=name,id,type,icon,url,size&orderby=name&text=" + value);
         else:
             url = self.makeUrl("/search/type/" + type +"?output=default.csv&escapecommas=true&orderby=name&fields=name,id,type,icon,url,size&text=" + value);    
-        csv = readUrl(url);
+        csv = read_url(url);
         return self.makeEntries(csv);
 
 
@@ -1130,7 +1163,7 @@ class Ramadda(Repository):
             if len(line2)>=5:
                 cnt = cnt+1;
                 name = line2[0];
-                name  = name.replace("_comma_",",");
+                name = name.replace("_comma_",",");
                 id = line2[1];
                 type = line2[2];
                 icon = line2[3];
@@ -1154,7 +1187,7 @@ class Ramadda(Repository):
         """make a href for the given entry"""
         return  self.base  +'/entry/show?entryid=' + entryId;
 
-    def makeEntryHref(self, entryId, name, icon = None, alt = ""):
+    def makeEntryHref(self, entryId, name, icon=None, alt=""):
         """make a href for the given entry"""
         html = '<a target=ramadda title="' + alt +'" href="' + self.base  +'/entry/show?entryid=' + entryId  + '">' + name +'</a>';
         if icon is not None:
@@ -1258,7 +1291,7 @@ class RepositoryEntry:
 class TDSCatalogEntry(RepositoryEntry):
     def __init__(self, repository, url, name):
         RepositoryEntry.__init__(self,repository, name, url, "", None, 0);
-        self.url   = url;
+        self.url  = url;
 
     def getFilePath(self):
         return self.url;
@@ -1276,7 +1309,7 @@ class FileEntry(RepositoryEntry):
     def __init__(self, repository, path):
 ##        print(path);
         RepositoryEntry.__init__(self,repository, path, path, "", None, os.path.getsize(path));
-        self.path   = path;
+        self.path  = path;
 
 
     def getFilePath(self):
@@ -1329,7 +1362,7 @@ class RamaddaEntry(RepositoryEntry):
         return  self.getRepository().base +"/entry/get?entryid=" + self.id;
 
     def addDisplayWidget(self,row):
-        b  = DrilsdownUI.makeButton("Set URL",DrilsdownUI.setUrlClicked);
+        b = DrilsdownUI.make_button("Set URL",DrilsdownUI.setUrlClicked);
         b.entry = self;
         row.append(b);
         link = self.getRepository().makeUrl("/entry/show/?output=idv.islform&entryid=" + self.getId());
@@ -1337,7 +1370,7 @@ class RamaddaEntry(RepositoryEntry):
 
 
 ##Make the REPOSITORIES
-repositories  =[Ramadda("http://weather.rsmas.miami.edu/repository/entry/show?entryid=45e3b50b-dbe2-408b-a6c2-2c009749cd53","The Mapes IDV Collection"),
+repositories = [Ramadda("http://weather.rsmas.miami.edu/repository/entry/show?entryid=45e3b50b-dbe2-408b-a6c2-2c009749cd53","The Mapes IDV Collection"),
            Ramadda("http://geodesystems.com/repository/entry/show?entryid=12704a38-9a06-4989-aac4-dafbbe13a675", "Geode Systems Drilsdown Collection"),
             Ramadda("https://www.esrl.noaa.gov/psd/repository/entry/show?entryid=f8d470f4-a072-4c1e-809e-d6116a393818","NOAA-ESRL-PSD Climate Data Repository"),
 ##                Ramadda("http://ramadda.atmos.albany.edu:8080/repository?entryid=643aa629-c53d-48cb-8454-572fad73cb0f","University of Albany RAMADDA"),
@@ -1349,12 +1382,7 @@ repositories  =[Ramadda("http://weather.rsmas.miami.edu/repository/entry/show?en
 ];
 Repository.theRepository = repositories[0];
 
-
-#import DrilsdownDefaults;
-
-#if not  DrilsdownDefaults.generatedNotebook:
-
-makeUI("");
+make_ui("");
 
         
 
