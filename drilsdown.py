@@ -31,7 +31,7 @@ import time
 from IPython import get_ipython
 from ipywidgets import *
 import ipywidgets as widgets
-from  zipfile import *
+from zipfile import *
 import requests
 import xml.etree.ElementTree
 from glob import glob
@@ -106,7 +106,7 @@ def create_case_study(line, cell=None):
     url = Repository.theRepository.make_url("/entry/form?parentof="
                                             + Repository.theRepository.entryId
                                             + "&type=type_drilsdown_casestudy&name=" + line)
-    url = url.replace(" ","%20")
+    url = url.replace(" ", "%20")
     print("Go to this link to create the Case Study:")
     print(url)
     print("Then call %set_ramadda with the new Case Study URL")
@@ -207,7 +207,7 @@ def save_bundle(line, cell=None):
         tok = toks[i]
         if tok != "":
             if tok == "-publish":
-                publish= True
+                publish = True
             else:
                 filename = tok
     Idv.save_bundle(filename, publish)
@@ -323,8 +323,8 @@ class DrilsdownUI:
         display(VBox(
                 [HTML("<h3>iPython-IDV Control Panel</h3>"),
                     HBox([HTML("<b>Resources:</b>"),
-                            repository_selector,
-                            list_btn]),
+                          repository_selector,
+                          list_btn]),
                     HBox([HTML("<b>Search for:</b>"), search,
                           cssearch, gridsearch, allsearch]),
                     HBox([DrilsdownUI.make_button("Run IDV", DrilsdownUI.run_idv_clicked),
@@ -849,12 +849,12 @@ class Repository:
             max_length = 25
             if len(name) > max_length:
                 name = name[:max_length-len(name)]
-            name = name.ljust(max_length," ")
-            name = name.replace(" ","&nbsp;")
+            name = name.ljust(max_length, " ")
+            name = name.replace(" ", "&nbsp;")
             row = []
             if entry.get_url() is not None:
                 href = self.make_entry_href(id,  name, icon, full_name)
-                href = "<span style=font-family:monospace;>" + href +"</span>"
+                href = "<span style=font-family:monospace;>" + href + "</span>"
                 href = HTML(href)
                 row = [indent, href]
             else:
@@ -1067,9 +1067,9 @@ class Ramadda(Repository):
     def __init__(self, url, name=None):
         self.url = url
         toks = urlparse(url)
-        self.host = toks.scheme +"://" + toks.netloc
-        self.base = toks.scheme +"://" + toks.netloc
-        path = re.sub("/entry.*","", toks.path)
+        self.host = toks.scheme + "://" + toks.netloc
+        self.base = toks.scheme + "://" + toks.netloc
+        path = re.sub("/entry.*", "", toks.path)
         self.base += path
         self.entryId = re.search("entryid=([^&]+)", toks.query).group(1)
         if name is not None:
@@ -1133,7 +1133,7 @@ class Ramadda(Repository):
 
     def make_entries(self, csv):
         """Convert the RAMADDA csv into a list of RamaddaEntry objects """
-        entries =[]
+        entries = []
         lines = csv.split("\n")
         cnt = 0
         for i in range(len(lines)):
@@ -1144,7 +1144,7 @@ class Ramadda(Repository):
             if len(line2) >= 5:
                 cnt = cnt+1
                 name = line2[0]
-                name = name.replace("_comma_",",")
+                name = name.replace("_comma_", ",")
                 id = line2[1]
                 type = line2[2]
                 icon = line2[3]
@@ -1270,7 +1270,7 @@ class RepositoryEntry:
 
 class TDSCatalogEntry(RepositoryEntry):
     def __init__(self, repository, url, name):
-        RepositoryEntry.__init__(self,repository, name, url, "", None, 0)
+        RepositoryEntry.__init__(self, repository, name, url, "", None, 0)
         self.url = url
 
     def get_file_path(self):
@@ -1286,7 +1286,7 @@ class TDSCatalogEntry(RepositoryEntry):
 class FileEntry(RepositoryEntry):
     def __init__(self, repository, path):
         # print(path)
-        RepositoryEntry.__init__(self,repository, path, path, "", None, os.path.getsize(path))
+        RepositoryEntry.__init__(self, repository, path, path, "", None, os.path.getsize(path))
         self.path = path
 
     def get_file_path(self):
