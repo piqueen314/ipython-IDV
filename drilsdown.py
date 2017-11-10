@@ -60,8 +60,8 @@ def read_url(url):
         print("Error reading url:" + url)
 
 
-def testit(line, cell=None):
-    print( os.listdir("."))
+def test_it(line, cell=None):
+    print(os.listdir("."))
 
 
 #
@@ -90,7 +90,7 @@ def idv_help(line, cell=None):
 
 def run_idv(line=None, cell=None):
     """Magic hook to start the IDV"""
-    Idv.run_idv(fromUser=True)
+    Idv.run_idv(from_user=True)
 
 
 def load_catalog(line, cell=None):
@@ -103,9 +103,9 @@ def load_bundle_make_image(line, cell=None):
 
 
 def create_case_study(line, cell=None):
-    url = Repository.theRepository.makeUrl("/entry/form?parentof="
-                                           + Repository.theRepository.entryId
-                                           + "&type=type_drilsdown_casestudy&name=" + line)
+    url = Repository.theRepository.make_url("/entry/form?parentof="
+                                            + Repository.theRepository.entryId
+                                            + "&type=type_drilsdown_casestudy&name=" + line)
     url = url.replace(" ","%20")
     print("Go to this link to create the Case Study:")
     print(url)
@@ -113,13 +113,13 @@ def create_case_study(line, cell=None):
 
 
 def load_data(line, cell=None, name=None):
-    Idv.load_data(line,name)
+    Idv.load_data(line, name)
     
 
 def load_bundle(line, cell=None):
     if line is None or line == "":
         if Repository.theRepository is not None:
-            line = Repository.theRepository.makeUrl("/drilsdown/getbundle?entryid=" + Repository.theRepository.entryId)
+            line = Repository.theRepository.make_url("/drilsdown/getbundle?entryid=" + Repository.theRepository.entryId)
 
     if line is None or line == "":
         print("No bundle argument provided")
@@ -135,7 +135,7 @@ def make_image(line, cell=None):
     caption = None
     display_id = None
     for i in range(len(toks)):
-        if skip>0:
+        if skip > 0:
             skip = skip-1
             continue
         tok = toks[i].strip()
@@ -157,7 +157,7 @@ def make_image(line, cell=None):
             print("%make_image <-display displayid> <-caption caption> <-publish>")
             return
         
-    return Idv.make_image(publish, caption, displayId=display_id)
+    return Idv.make_image(publish, caption, display_id=display_id)
 
 
 def publish_notebook(line, cell=None):
@@ -180,7 +180,7 @@ def make_movie(line, cell=None):
             skip = 1
             display_id = toks[i+1]
 
-    return Idv.make_movie(publish, displayId=display_id)
+    return Idv.make_movie(publish, display_id=display_id)
 
 
 def set_ramadda(line, cell=None):
@@ -188,14 +188,14 @@ def set_ramadda(line, cell=None):
     line_toks = line.split(" ")
     should_list = len(line_toks) == 1
     line = line_toks[0]
-    Repository.setRepository(Ramadda(line), should_list)
+    Repository.set_repository(Ramadda(line), should_list)
 
 
-def list_repository(entryId=None, repository=None):
+def list_repository(entry_id=None, repository=None):
     """List the entries held by the entry id"""
     if repository is None:
         repository = Repository.theRepository
-    repository.list_entry(entryId)
+    repository.list_entry(entry_id)
 
 
 def save_bundle(line, cell=None):
@@ -205,7 +205,7 @@ def save_bundle(line, cell=None):
     toks = line.split(" ")
     for i in range(len(toks)):
         tok = toks[i]
-        if tok!="":
+        if tok != "":
             if tok == "-publish":
                 publish= True
             else:
@@ -232,7 +232,7 @@ def make_ui(line):
 def load_ipython_extension(shell):
     """Define the magics"""
     magic_type = "line"
-    shell.register_magic_function(testit, magic_type)
+    shell.register_magic_function(test_it, magic_type)
     shell.register_magic_function(idv_help, magic_type)
     shell.register_magic_function(run_idv, magic_type)
     shell.register_magic_function(make_ui, magic_type)
@@ -262,13 +262,12 @@ class DrilsdownUI:
         for i in range(len(repositories)):
             repository = repositories[i]
             if i == 0:
-                first = repository.getId()
-            DrilsdownUI.idToRepository[repository.getId()] = repository
-            name_map[repository.getName()] = repository.getId()
-            names.append(repository.getName())
+                first = repository.get_id()
+            DrilsdownUI.idToRepository[repository.get_id()] = repository
+            name_map[repository.get_name()] = repository.get_id()
+            names.append(repository.get_name())
 
-
-        text_layout=Layout(width='150px')
+        text_layout = Layout(width='150px')
         repository_selector = widgets.Dropdown(
             options=name_map,
             value=first,
@@ -328,16 +327,16 @@ class DrilsdownUI:
                             list_btn]),
                     HBox([HTML("<b>Search for:</b>"), search,
                           cssearch, gridsearch, allsearch]),
-                    HBox([DrilsdownUI.make_button("Run IDV",DrilsdownUI.run_idv_clicked),
-                          DrilsdownUI.make_button("Make Image",DrilsdownUI.make_image_clicked, cbx),
-                          DrilsdownUI.make_button("Make Movie",DrilsdownUI.make_movie_clicked,cbx),
-                          DrilsdownUI.make_button("Save Bundle",DrilsdownUI.save_bundle_clicked,cbx),
-                          DrilsdownUI.make_button("Publish Notebook",Idv.publish_notebook),
+                    HBox([DrilsdownUI.make_button("Run IDV", DrilsdownUI.run_idv_clicked),
+                          DrilsdownUI.make_button("Make Image", DrilsdownUI.make_image_clicked, cbx),
+                          DrilsdownUI.make_button("Make Movie", DrilsdownUI.make_movie_clicked, cbx),
+                          DrilsdownUI.make_button("Save Bundle", DrilsdownUI.save_bundle_clicked, cbx),
+                          DrilsdownUI.make_button("Publish Notebook", Idv.publish_notebook),
                           cbx]),
                     HBox([
                           # Label("Outputs append below until Cleared:"),
                           DrilsdownUI.make_button("Clear Outputs", DrilsdownUI.clear_clicked),
-                          DrilsdownUI.make_button("Commands Help",idv_help),
+                          DrilsdownUI.make_button("Commands Help", idv_help),
                           DrilsdownUI.statusLabel
                     ]),
                  ]))
@@ -371,17 +370,17 @@ class DrilsdownUI:
     def handle_search(widget):
         type = widget.type
         value = widget.value.replace(" ", "%20")
-        if hasattr(Repository.theRepository,"doSearch"):
+        if hasattr(Repository.theRepository, "do_search"):
             DrilsdownUI.status("Searching...")
-            entries = Repository.theRepository.doSearch(value, type)
-            Repository.theRepository.displayEntries("<b>Search Results:</b> " + widget.value + " <br>", entries)
+            entries = Repository.theRepository.do_search(value, type)
+            Repository.theRepository.display_entries("<b>Search Results:</b> " + widget.value + " <br>", entries)
             DrilsdownUI.status("")
         else:
             DrilsdownUI.status("Search not available")
 
     @staticmethod
     def run_idv_clicked(b):
-        Idv.run_idv(fromUser=True)
+        Idv.run_idv(from_user=True)
 
     @staticmethod
     def save_bundle_clicked(b):
@@ -412,26 +411,26 @@ class DrilsdownUI:
 
     @staticmethod
     def load_bundle_clicked(b):
-        load_bundle(b.entry.getFilePath())
+        load_bundle(b.entry.get_file_path())
 
     @staticmethod
     def view_url_clicked(b):
         DrilsdownUI.do_display(HTML("<a target=ramadda href=" + b.url + ">" + b.name + "</a>"))
-        display(IFrame(src=b.url,width=800, height=400))
+        display(IFrame(src=b.url, width=800, height=400))
 
     @staticmethod
     def load_data_clicked(b):
-        load_data(b.entry.getDataPath(), None, b.name)
+        load_data(b.entry.get_data_path(), None, b.name)
 
     @staticmethod
     def set_data_clicked(b):
-        url = b.entry.getDataPath()
+        url = b.entry.get_data_path()
         Idv.data_url = url
         print('To access the data use the variable: Idv.data_url or:\n' + url)
 
     @staticmethod
     def set_url_clicked(b):
-        url = b.entry.makeGetFileUrl()
+        url = b.entry.make_get_file_url()
         Idv.file_url = url
         print('To access the URL use the variable: Idv.file_url or:\n' + url)
 
@@ -440,7 +439,7 @@ class DrilsdownUI:
         if b.entry is None:
             list_repository(None)
         else:
-            list_repository(b.entry.getId(), b.entry.getRepository())
+            list_repository(b.entry.get_id(), b.entry.get_repository())
 
     @staticmethod
     def load_catalog_clicked(b):
@@ -449,7 +448,7 @@ class DrilsdownUI:
     @staticmethod
     def repository_selector_changed(s):
         repository = DrilsdownUI.idToRepository[s['new']]
-        Repository.setRepository(repository)
+        Repository.set_repository(repository)
 
     @staticmethod
     def clear_clicked(b):
@@ -529,11 +528,11 @@ class Idv:
         return None
 
     @staticmethod
-    def run_idv(fromUser=False):
+    def run_idv(from_user=False):
         """Check if the IDV is running"""
-        idvRunning = Idv.idv_ping()
-        if idvRunning:
-            if fromUser:
+        idv_running = Idv.idv_ping()
+        if idv_running:
+            if from_user:
                 DrilsdownUI.status("IDV is running")
             return
 
@@ -596,7 +595,7 @@ class Idv:
         Will start up the IDV if needed then call the command
         If args is non-null then this is a map of the url arguments to pass to the IDV
         """
-        Idv.run_idv(fromUser = False)
+        Idv.run_idv(from_user=False)
 # TODO: add better error handling
         try:
             url = Idv.get_base_url() +command
@@ -632,8 +631,9 @@ class Idv:
 
     @staticmethod
     def getname():
-        # A hack from https://stackoverflow.com/questions/12544056/how-do-i-get-the-current-ipython-notebook-name to get the
-        # name of the notebook file
+        # A hack from
+        # https://stackoverflow.com/questions/12544056/how-do-i-get-the-current-ipython-notebook-name
+        # to get the name of the notebook file
         connection_file_path = kernel.get_connection_file()
         connection_file = os.path.basename(connection_file_path)
         kernel_id = connection_file.split('-', 1)[1].split('.')[0]
@@ -679,16 +679,16 @@ class Idv:
             Idv.bbox.append(float(toks[i]))
         print("BBOX is set")
 
-
-
     @staticmethod
     def load_catalog(url=None):
-        if url is  None or url == "":
-            url = Repository.theRepository.makeUrl("/entry/show?parentof=" + Repository.theRepository.entryId +"&amp;output=thredds.catalog")
+        if url is None or url == "":
+            url = Repository.theRepository.make_url("/entry/show?parentof="
+                                                    + Repository.theRepository.entryId
+                                                    + "&amp;output=thredds.catalog")
         else:
-            url = url.replace("&","&amp;")
+            url = url.replace("&", "&amp;")
         isl = '<isl>\n<loadcatalog url="' + url+'"/></isl>'
-        if Idv.idv_call(Idv.cmd_loadisl, {"isl": isl}) == None:
+        if Idv.idv_call(Idv.cmd_loadisl, {"isl": isl}) is None:
             print("load_catalog failed")
             return
 
@@ -700,7 +700,7 @@ class Idv:
         filename = "idv.xidv"
         if publish:
             extra += ' publish="true" '
-        isl = '<isl><save file="' + filename +'"' + extra +'/></isl>'
+        isl = '<isl><save file="' + filename + '"' + extra + '/></isl>'
         result = Idv.idv_call(Idv.cmd_loadisl, {"isl": isl})
         if result is None:
             print("save failed")
@@ -711,7 +711,7 @@ class Idv:
         DrilsdownUI.status("Bundle not saved")
 
     @staticmethod
-    def load_bundle(bundleUrl, bbox=None):
+    def load_bundle(bundle_url, bbox=None):
         extra1 = ""
         extra2 = ""
         if bbox is None:
@@ -727,7 +727,7 @@ class Idv:
             east = float(bbox[3])+padding
             extra2 += '<pause/><center north="' + repr(north) + '" west="' + repr(west) + '" south="'\
                       + repr(south) + '" east="' + repr(east) + '" />'
-        isl = '<isl>\n<bundle file="' + bundleUrl + '" ' + extra1 + '/>' + extra2 + '\n</isl>'
+        isl = '<isl>\n<bundle file="' + bundle_url + '" ' + extra1 + '/>' + extra2 + '\n</isl>'
         if Idv.idv_call(Idv.cmd_loadisl, {"isl": isl}) is None:
             DrilsdownUI.status("Bundle load failed")
             return
@@ -750,21 +750,21 @@ class Idv:
         print("Publication failed")
 
     @staticmethod
-    def make_movie(publish=False, caption=None, display=True, displayId=None):
-        return Idv.make_imageOrMovie(False, publish, caption, display, displayId)
+    def make_movie(publish=False, caption=None, display=True, display_id=None):
+        return Idv.make_imageOrMovie(False, publish, caption, display, display_id)
 
     @staticmethod
-    def make_image(publish=False, caption=None, display=True, displayId=None):
-        return Idv.make_imageOrMovie(True, publish, caption, display, displayId)
+    def make_image(publish=False, caption=None, display=True, display_id=None):
+        return Idv.make_imageOrMovie(True, publish, caption, display, display_id)
 
     @staticmethod
-    def make_imageOrMovie(image, publish=False, caption=None, display=True, displayId=None):
+    def make_imageOrMovie(image, publish=False, caption=None, display=True, display_id=None):
         what = "movie"
         if image:
             what = "image"
         DrilsdownUI.status("Making " + what + "...")
-        selfPublish = False
-        idvPublish = False
+        self_publish = False
+        idv_publish = False
         parent = None
         extra = ""
         extra2 = ""
@@ -772,16 +772,16 @@ class Idv:
         ramadda = Repository.theRepository
         if type(publish) is bool:
             if publish:
-                idvPublish = True
+                idv_publish = True
                 extra = " publish=\"true\" "
         elif publish is not None:
-            selfPublish = True
+            self_publish = True
             if 'ramadda' in publish:
                 ramadda = Ramadda(publish['ramadda'])
             if 'parent' in publish:
                 parent = publish['parent']
             else:
-                parent = ramadda.getId()
+                parent = ramadda.get_id()
             if 'name' in publish:
                 name = publish['name']
         if caption is not None:
@@ -793,19 +793,19 @@ class Idv:
         if name is None:
             name = caption
 
-        if displayId is not None:
-            extra += ' display="' + displayId + '" '
+        if display_id is not None:
+            extra += ' display="' + display_id + '" '
         with NamedTemporaryFile(suffix='.gif', delete=False) as f:
             isl = '<isl><' + what + ' combine="true" file="' + f.name + '"' \
                   + extra + '>' + extra2 + '</' + what + '></isl>'
             result = Idv.idv_call(Idv.cmd_loadisl, {"isl": isl})
             f.seek(0)
-            if idvPublish:
+            if idv_publish:
                 if result is None or result.strip() == "":
                     DrilsdownUI.status("make " + what + " failed")
                     return
                 print("Publication successful " + "URL: " + result)
-            if selfPublish:
+            if self_publish:
                 ramadda.publish(name, file=f.name, parent=parent)
             data = open(f.name, "rb").read()
             f.close()
@@ -823,17 +823,17 @@ class Repository:
     def __init__(self, id):
         self.id = id
 
-    def setRepository(repository, shouldList=False):
+    def set_repository(repository, should_list=False):
         """Set the repository to be used. The arg should be the normal /entry/view URL for a REPOSITORY entry"""
         Repository.theRepository = repository
-        if shouldList:
-            list_repository(Repository.theRepository.entryId, repository)
-        return  Repository.theRepository
+        if should_list:
+            list_repository(Repository.theRepository.entry_id, repository)
+        return Repository.theRepository
 
-    def getId(self):
-        return self.entryId
+    def get_id(self):
+        return self.entry_id
 
-    def displayEntries(self, label="Entries", entries=[]):
+    def display_entries(self, label="Entries", entries=[]):
         cnt = 0
         indent = HTML("&nbsp;&nbsp;&nbsp;")
         rows = [HTML(label)]
@@ -842,18 +842,18 @@ class Repository:
                 break
             cnt = cnt+1
             entry = entries[i]
-            name = entry.getName()
-            id = entry.getId()
-            icon = entry.getIcon()
-            fullName = name
-            maxLength = 25
-            if len(name)>maxLength:
-                name = name[:maxLength-len(name)]
-            name = name.ljust(maxLength," ")
+            name = entry.get_name()
+            id = entry.get_id()
+            icon = entry.get_icon()
+            full_name = name
+            max_length = 25
+            if len(name) > max_length:
+                name = name[:max_length-len(name)]
+            name = name.ljust(max_length," ")
             name = name.replace(" ","&nbsp;")
             row = []
-            if entry.getUrl() is not None:
-                href = self.makeEntryHref(id,  name, icon, fullName)
+            if entry.get_url() is not None:
+                href = self.make_entry_href(id,  name, icon, full_name)
                 href = "<span style=font-family:monospace;>" + href +"</span>"
                 href = HTML(href)
                 row = [indent, href]
@@ -861,39 +861,39 @@ class Repository:
                 label = "<span style=font-family:monospace;>" + name + "</span>"
                 row = [indent, HTML(label)]
 
-            if entry.isBundle():
+            if entry.is_bundle():
                 b = DrilsdownUI.make_button("Load bundle", DrilsdownUI.load_bundle_clicked)
                 b.entry = entry
                 row.append(b)
-                entry.addDisplayWidget(row)
-            elif entry.isGrid():
+                entry.add_display_widget(row)
+            elif entry.is_grid():
                 b = DrilsdownUI.make_button("Load data", DrilsdownUI.load_data_clicked)
-                b.name = fullName
+                b.name = full_name
                 b.entry = entry
                 row.append(b)
                 b = DrilsdownUI.make_button("Set data", DrilsdownUI.set_data_clicked)
                 b.entry = entry
                 row.append(b)
-            elif entry.isGroup():
+            elif entry.is_group():
                 b = DrilsdownUI.make_button("List", DrilsdownUI.list_repository_clicked)
                 b.entry = entry
                 row.append(b)
-                catalogUrl = entry.getCatalogUrl()
-                if catalogUrl is not None:
+                catalog_url = entry.get_catalog_url()
+                if catalog_url is not None:
                     load_catalog = DrilsdownUI.make_button("Load Catalog", DrilsdownUI.load_catalog_clicked)
-                    load_catalog.url = catalogUrl
+                    load_catalog.url = catalog_url
                     row.append(load_catalog)
             else:
-                if entry.getUrl() is not None:
+                if entry.get_url() is not None:
                     b = DrilsdownUI.make_button("View", DrilsdownUI.view_url_clicked)
-                    b.url = self.makeUrl("/entry/show?entryid=" + id)
+                    b.url = self.make_url("/entry/show?entryid=" + id)
                     b.name = name
                     row.append(b)
-                    fileSize = entry.getFileSize()
-                    if fileSize > 0:
-                        link = self.makeUrl("/entry/get?entryid=" + id)
+                    file_size = entry.get_file_size()
+                    if file_size > 0:
+                        link = self.make_url("/entry/get?entryid=" + id)
                         row.append(HTML('&nbsp;&nbsp;<a target=ramadda href="' + link+'">Download ('
-                                        + repr(fileSize) + ' bytes) </a>'))
+                                        + repr(file_size) + ' bytes) </a>'))
                 else:
                     row.append(HTML('<a target=_filedownload href="' + entry.path + '">' + entry.path + '</>'))
             rows.append(HBox(row))
@@ -913,21 +913,21 @@ class LocalFiles(Repository):
         self.name = "Local Files"
         self.searchCnt = 0
 
-    def list_entry(self, entryId):
+    def list_entry(self, entry_id):
         """List the entries held by the entry id"""
-        entries = self.doList(entryId)
-        self.displayEntries("<b></b><br>", entries)
+        entries = self.do_list(entry_id)
+        self.display_entries("<b></b><br>", entries)
 
-    def getId(self):
+    def get_id(self):
         return self.dir
 
-    def getName(self):
+    def get_name(self):
         return self.name
 
-    def getBase(self):
+    def get_base(self):
         return self.dir
 
-    def doList(self, dir=None, display=False, label="Entries"):
+    def do_list(self, dir=None, display=False, label="Entries"):
         """make a list of RamaddaEntry objects that are children of the given entryId"""
         if dir is None:
             dir = self.dir
@@ -941,45 +941,45 @@ class LocalFiles(Repository):
                 entries.append(FileEntry(self, prefix + files[i]))
 
         if display:
-            self.displayEntries(label, entries)
+            self.display_entries(label, entries)
         else:
             return entries
 
-    def doSearch(self, value, type=None):
+    def do_search(self, value, type=None):
         """Do a search for the text value and (optionally) the entry type. Return a list of RamaddaEntry objects"""
         self.searchCnt = 0
         # print("Search not supported for local files")
         files = []
-        self.doSearchInner(value, self.dir, files, type)
+        self.do_search_inner(value, self.dir, files, type)
         return files
 
-    def doSearchInner(self, value, dir, list, type):
+    def do_search_inner(self, value, dir, list, type):
         # Only check so many files - should make this breadth firs
         if self.searchCnt > 5000:
             return
         files = os.listdir(dir)
         for i in range(len(files)):
-            File = files[i]
-            file = File.lower()
+            file_mixed_case = files[i]
+            file = file_mixed_case.lower()
             if file.startswith("."):
                 continue
-            if re.match(value, File) or value in File or re.match(value, file) or value in file:
+            if re.match(value, file_mixed_case) or value in file_mixed_case or re.match(value, file) or value in file:
                 ok = True
                 if type is not None:
                     if type == "type_idv_bundle":
-                        if not File.endswith(".xidv") and not File.endswith(".zidv"):
+                        if not file_mixed_case.endswith(".xidv") and not file_mixed_case.endswith(".zidv"):
                             ok = False
                         
                     if type == "type_drilsdown_casestudy":
                         if not os.path.isdir(dir + "/" + file):
                             ok = False
                     if type == "cdm_grid":
-                        if not File.endswith(".nc"):
+                        if not file_mixed_case.endswith(".nc"):
                             ok = False
                 if ok:
-                    list.append(FileEntry(self,dir+"/" + file))
-            if os.path.isdir(dir +"/" + file):
-                self.doSearchInner(value, dir+"/" + file,list, type)
+                    list.append(FileEntry(self, dir+"/" + file))
+            if os.path.isdir(dir + "/" + file):
+                self.do_search_inner(value, dir + "/" + file, list, type)
 
 
 class TDS(Repository):
@@ -992,21 +992,21 @@ class TDS(Repository):
             root = xml.etree.ElementTree.fromstring(catalog)
             self.name = root.attrib['name']
 
-    def list_entry(self, entryId):
+    def list_entry(self, entry_id):
         """List the entries held by the entry id"""
-        entries = self.doList(entryId)
-        self.displayEntries("<b></b><br>", entries)
+        entries = self.do_list(entry_id)
+        self.display_entries("<b></b><br>", entries)
 
-    def getId(self):
+    def get_id(self):
         return self.url
 
-    def getName(self):
+    def get_name(self):
         return self.name
 
-    def getBase(self):
+    def get_base(self):
         return self.url
 
-    def doList(self, url=None, display=False, label="Entries"):
+    def do_list(self, url=None, display=False, label="Entries"):
         """make a list of RamaddaEntry objects that are children of the given entryId"""
         if url is None:
             url = self.url
@@ -1015,10 +1015,10 @@ class TDS(Repository):
         entries = []
         for child in root:
             # print("child:" + child.tag)
-            self.getEntries(root, url, child, entries)
+            self.get_entries(root, url, child, entries)
 
         if display:
-            self.displayEntries(label, entries)
+            self.display_entries(label, entries)
         else:
             return entries
 
@@ -1026,14 +1026,14 @@ class TDS(Repository):
         tag = re.sub("{.*}", "", tag)
         return tag
 
-    def getEntries(self, root, url, element, entries):
+    def get_entries(self, root, url, element, entries):
         tag = self.clean_tag(element.tag)
 
         if tag == "dataset":
             for child in element:
-                self.getEntries(root, url, child, entries)
-            serviceName = self.findServiceName(root)
-            if serviceName is not None:
+                self.get_entries(root, url, child, entries)
+            service_name = self.find_service_name(root)
+            if service_name is not None:
                 print("dataset:" + element.attrib["name"])
                 return
             return
@@ -1046,16 +1046,16 @@ class TDS(Repository):
             
         return
 
-    def findOpendapServices(self, parentService, element, map):
+    def find_opendap_services(self, parentService, element, map):
         # serviceType="OPENDAP"
         return
 
-    def findServiceName(self, element):
+    def find_service_name(self, element):
 
         if element.tag == "serviceName":
             return element.text
         for child in element:
-            name = self.findServiceName(child)
+            name = self.find_service_name(child)
             if name is not None:
                 return name
         return None
@@ -1063,6 +1063,7 @@ class TDS(Repository):
 
 class Ramadda(Repository):
     theRamadda = None
+
     def __init__(self, url, name=None):
         self.url = url
         toks = urlparse(url)
@@ -1074,62 +1075,63 @@ class Ramadda(Repository):
         if name is not None:
             self.name = name
         else:
-            toks = read_url(self.makeUrl("/entry/show?output=entry.csv&escapecommas=true&fields=name,icon&entryid="
-                                         + self.entryId)).split("\n")[1].split(",")
+            toks = read_url(self.make_url("/entry/show?output=entry.csv&escapecommas=true&fields=name,icon&entryid="
+                                          + self.entryId)).split("\n")[1].split(",")
             self.name = toks[0].replace("_comma_", ",")
 
-    def getId(self):
+    def get_id(self):
         return self.entryId
 
-    def getName(self):
+    def get_name(self):
         return self.name
 
-    def getBase(self):
+    def get_base(self):
         return self.base
 
-    def list_entry(self, entryId):
-        if entryId is None:
-            entryId = self.entryId
+    def list_entry(self, entry_id):
+        if entry_id is None:
+            entry_id = self.entryId
         """List the entries held by the entry id"""
-#        print(self.makeUrl("/entry/show?output=entry.csv&escapecommas=true&fields=name,icon&entryid=" + entryId))
-        toks = read_url(self.makeUrl("/entry/show?output=entry.csv&escapecommas=true&fields=name,icon&entryid="
-                                     + entryId)).split("\n")[1].split(",")
-        baseName = toks[0]
-        baseName = baseName.replace("_comma_",",")
+#        print(self.make_url("/entry/show?output=entry.csv&escapecommas=true&fields=name,icon&entryid=" + entry_id))
+        toks = read_url(self.make_url("/entry/show?output=entry.csv&escapecommas=true&fields=name,icon&entryid="
+                                      + entry_id)).split("\n")[1].split(",")
+        base_name = toks[0]
+        base_name = base_name.replace("_comma_", ",")
         icon = toks[1]
-        entries = self.doList(entryId)
-        self.displayEntries("<b>" + "<img src=" + self.host + icon+"> "
-                            + "<a target=self href=" + self.base + "/entry/show?entryid="
-                            + entryId + ">" + baseName+"</a></b><br>", entries)
+        entries = self.do_list(entry_id)
+        self.display_entries("<b>" + "<img src=" + self.host + icon + "> "
+                             + "<a target=self href=" + self.base + "/entry/show?entryid="
+                             + entry_id + ">" + base_name + "</a></b><br>", entries)
 
-    def doList(self, entryId=None, display=False, label="Entries"):
-        """make a list of RamaddaEntry objects that are children of the given entryId"""
-        if entryId is None:
-            entryId = self.entryId
-        csv = read_url(self.makeUrl("/entry/show?entryid=" + entryId
-                                    + "&output=default.csv&escapecommas=true&fields=name,id,type,icon,url,size&orderby=name"))
-        entries = self.makeEntries(csv)
+    def do_list(self, entry_id=None, display=False, label="Entries"):
+        """make a list of RamaddaEntry objects that are children of the given entry_id"""
+        if entry_id is None:
+            entry_id = self.entryId
+        csv = read_url(self.make_url("/entry/show?entryid=" + entry_id
+                                     + "&output=default.csv&escapecommas=true&fields="
+                                       "name,id,type,icon,url,size&orderby=name"))
+        entries = self.make_entries(csv)
         if display:
-            self.displayEntries(label, entries)
+            self.display_entries(label, entries)
         else:
-            return  entries
+            return entries
 
-    def doSearch(self, value, type=None):
+    def do_search(self, value, type=None):
         """Do a search for the text value and (optionally) the entry type. Return a list of RamaddaEntry objects"""
-        entries =[]
+        entries = []
         if type is None or type == "":
-            url = self.makeUrl(
+            url = self.make_url(
                 "/search/do?output=default.csv&escapecommas=true&fields=name,id,type,icon,url,size&orderby=name&text="
                 + value)
         else:
-            url = self.makeUrl(
+            url = self.make_url(
                 "/search/type/" + type
                 + "?output=default.csv&escapecommas=true&orderby=name&fields=name,id,type,icon,url,size&text="
                 + value)
         csv = read_url(url)
-        return self.makeEntries(csv)
+        return self.make_entries(csv)
 
-    def makeEntries(self, csv):
+    def make_entries(self, csv):
         """Convert the RAMADDA csv into a list of RamaddaEntry objects """
         entries =[]
         lines = csv.split("\n")
@@ -1147,26 +1149,27 @@ class Ramadda(Repository):
                 type = line2[2]
                 icon = line2[3]
                 url = line2[4]
-                fileSize = 0
+                file_size = 0
                 try:
-                    fileSize = float(line2[5])
+                    file_size = float(line2[5])
                 except:
                     print("bad line:" + line2[5])
-                entry = RamaddaEntry(self, name, id, type,icon, url, fileSize)
+                entry = RamaddaEntry(self, name, id, type, icon, url, file_size)
                 entries.append(entry)
         return entries
 
-    def makeUrl(self, path):
+    def make_url(self, path):
         """Add the ramadda base path to the given url path"""
         return self.base + path
 
-    def makeEntryUrl(self, entryId):
+    def make_entry_url(self, entryId):
         """make a href for the given entry"""
         return self.base + '/entry/show?entryid=' + entryId
 
-    def makeEntryHref(self, entryId, name, icon=None, alt=""):
+    def make_entry_href(self, entryId, name, icon=None, alt=""):
         """make a href for the given entry"""
-        html = '<a target=ramadda title="' + alt + '" href="' + self.base + '/entry/show?entryid=' + entryId + '">' + name + '</a>'
+        html = '<a target=ramadda title="' + alt + '" href="' + self.base \
+               + '/entry/show?entryid=' + entryId + '">' + name + '</a>'
         if icon is not None:
             html = "<img src=" + self.host + icon+"> " + html
         return html
@@ -1189,115 +1192,113 @@ class Ramadda(Repository):
         extra = ""
         if file is not None:
             extra += ' file="' + os.path.basename(file) + '" '
-        entryXml = '<entry name="' + name + '" ' + extra + '/>'
+        entry_xml = '<entry name="' + name + '" ' + extra + '/>'
         with NamedTemporaryFile(suffix='.zip') as tmpZip:
             with ZipFile(tmpZip.name, 'w') as myzip:
                 with NamedTemporaryFile(suffix='.xml') as tmpFile:
-                    entriesFile = open(tmpFile.name, 'w')
-                    entriesFile.write(entryXml)
-                    entriesFile.close()
+                    entries_file = open(tmpFile.name, 'w')
+                    entries_file.write(entry_xml)
+                    entries_file.close()
                     myzip.write(tmpFile.name, arcname='entries.xml')
                 if file is not None:
                     myzip.write(file)
             files = {'file': open(tmpZip.name, 'rb')}
             # TODO: change http to https
-            url = self.makeUrl("/entry/xmlcreate")
+            url = self.make_url("/entry/xmlcreate")
             r = requests.post(url, files=files,
-                              data={'group': parent,'auth.user': user,'auth.password': password,'response': 'xml'})
+                              data={'group': parent, 'auth.user': user, 'auth.password': password, 'response': 'xml'})
             root = xml.etree.ElementTree.fromstring(r.text)
             if root.attrib['code'] == 'ok':
                 for child in root:
-                    display(HTML("Published file: " + self.makeEntryHref(child.attrib['id'],name)))
+                    display(HTML("Published file: " + self.make_entry_href(child.attrib['id'], name)))
             else:
                 print('Error publishing file')
                 print(r.text)
 
 
 class RepositoryEntry:
-    def __init__(self, repository, name, id, type, icon, fileSize):
+    def __init__(self, repository, name, id, type, icon, file_size):
         self.repository = repository
-        self.name =  name.replace("_comma_",",")
+        self.name = name.replace("_comma_", ",")
         self.id = id
         self.type = type
         self.icon = icon
-        self.fileSize = fileSize
+        self.file_size = file_size
 
-    def getFilePath(self):
+    def get_file_path(self):
         return None
 
-    def getDataPath(self):
-        return self.getFilePath()
+    def get_data_path(self):
+        return self.get_file_path()
 
-    def getCatalogUrl(self):
+    def get_catalog_url(self):
         return None
 
-    def getRepository(self):
+    def get_repository(self):
         return self.repository
 
-    def getName(self):
+    def get_name(self):
         return self.name
 
-    def getId(self):
+    def get_id(self):
         return self.id
 
-    def getType(self):
+    def get_type(self):
         return self.type
 
-    def getIcon(self):
+    def get_icon(self):
         return self.icon
 
-    def getUrl(self):
+    def get_url(self):
         return None
 
-    def getFileSize(self):
-        return self.fileSize
+    def get_file_size(self):
+        return self.file_size
 
-    def isBundle(self):
+    def is_bundle(self):
         return False
 
-    def isGrid(self):
-        return self.getType() == "cdm_grid" or self.getName().endswith(".nc")
+    def is_grid(self):
+        return self.get_type() == "cdm_grid" or self.get_name().endswith(".nc")
 
-    def isGroup(self):
+    def is_group(self):
         return False
 
-    def addDisplayWidget(self, row):
+    def add_display_widget(self, row):
         return
 
 
 class TDSCatalogEntry(RepositoryEntry):
     def __init__(self, repository, url, name):
         RepositoryEntry.__init__(self,repository, name, url, "", None, 0)
-        self.url  = url
+        self.url = url
 
-    def getFilePath(self):
+    def get_file_path(self):
         return self.url
 
-    def isGroup(self):
+    def is_group(self):
         return True
 
-    def getCatalogUrl(self):
+    def get_catalog_url(self):
         return self.url
-
-
 
 
 class FileEntry(RepositoryEntry):
     def __init__(self, repository, path):
         # print(path)
         RepositoryEntry.__init__(self,repository, path, path, "", None, os.path.getsize(path))
-        self.path  = path
+        self.path = path
 
-    def getFilePath(self):
+    def get_file_path(self):
         return os.getcwd() + "/" + self.path
 
-    def getDataPath(self):
-        return self.getFilePath()
+    def get_data_path(self):
+        return self.get_file_path()
 
-    def isBundle(self):
-        return self.path.find("xidv") >=0 or self.path.find("zidv")>=0
+    def is_bundle(self):
+        return self.path.find("xidv") >= 0 or self.path.find("zidv") >= 0
 
-    def isGroup(self):
+    def is_group(self):
         return os.path.isdir(self.path)
 
 
@@ -1306,45 +1307,45 @@ class RamaddaEntry(RepositoryEntry):
         RepositoryEntry.__init__(self,ramadda, name, id, type, icon, fileSize)
         self.url = url
 
-    def getFilePath(self):
+    def get_file_path(self):
         return self.url
-        # return  self.getRepository().makeUrl("/entry/get?entryid=" + self.getId())
+        # return  self.get_repository().make_url("/entry/get?entryid=" + self.get_id())
 
-    def getDataPath(self):
-        return self.makeOpendapUrl()
+    def get_data_path(self):
+        return self.make_opendap_url()
 
-    def getCatalogUrl(self):
-        return self.repository.makeUrl("/entry/show?output=thredds.catalog&entryid=" + self.id)
+    def get_catalog_url(self):
+        return self.repository.make_url("/entry/show?output=thredds.catalog&entryid=" + self.id)
 
-    def getIcon(self):
+    def get_icon(self):
         return self.icon
 
-    def getUrl(self):
+    def get_url(self):
         return self.url
 
-    def isBundle(self):
-        return self.getType() == "type_idv_bundle" or self.getUrl().find("xidv") >= 0 \
-                                 or self.getUrl().find("zidv") >= 0
+    def is_bundle(self):
+        return self.get_type() == "type_idv_bundle" or self.get_url().find("xidv") >= 0 \
+                                 or self.get_url().find("zidv") >= 0
 
-    def isGrid(self):
-        return self.getType() == "cdm_grid" or self.getName().endswith(".nc")
+    def is_grid(self):
+        return self.get_type() == "cdm_grid" or self.get_name().endswith(".nc")
 
-    def isGroup(self):
-        return self.getType() == "type_drilsdown_casestudy" or self.getType() == "group" \
-                                 or self.getType() == "localfiles"
+    def is_group(self):
+        return self.get_type() == "type_drilsdown_casestudy" or self.get_type() == "group" \
+                                 or self.get_type() == "localfiles"
 
-    def makeOpendapUrl(self):
-        return self.getRepository().base +"/opendap/" + self.id +"/entry.das"
+    def make_opendap_url(self):
+        return self.get_repository().base + "/opendap/" + self.id + "/entry.das"
 
-    def makeGetFileUrl(self):
-        return self.getRepository().base +"/entry/get?entryid=" + self.id
+    def make_get_file_url(self):
+        return self.get_repository().base + "/entry/get?entryid=" + self.id
 
-    def addDisplayWidget(self,row):
+    def add_display_widget(self, row):
         b = DrilsdownUI.make_button("Set URL", DrilsdownUI.set_url_clicked)
         b.entry = self
         row.append(b)
-        link = self.getRepository().makeUrl("/entry/show/?output=idv.islform&entryid=" + self.getId())
-        row.append(HTML('<a target=ramadda href="' + link +'">Subset Bundle</a>'))
+        link = self.get_repository().make_url("/entry/show/?output=idv.islform&entryid=" + self.get_id())
+        row.append(HTML('<a target=ramadda href="' + link + '">Subset Bundle</a>'))
 
 
 # Make the REPOSITORIES
