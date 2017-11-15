@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/piqueen314/ipython-IDV.svg?branch=master)](https://travis-ci.org/piqueen314/ipython-IDV)
+
 # ipython-IDV
 ### Part of the [EarthCube DRILSDOWN project](https://brianmapes.github.io/EarthCube-DRILSDOWN/)
 

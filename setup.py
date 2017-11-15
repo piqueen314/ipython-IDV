@@ -9,7 +9,7 @@ setuptools.setup(
     author_email="cecehedrick@gmail.com",
 
     description="This project allows users to use Unidata's IDV with jupyter notebooks ",
-    long_description=open('README.rst').read(),
+    long_description=open('README.md').read(),
 
     packages=setuptools.find_packages(),
 
