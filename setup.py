@@ -10,7 +10,7 @@ with open(path.join(here, 'README.md'), encoding='utf-8') as f:
 
 setuptools.setup(
     name="ipython-IDV",
-    version="0.1.0",
+    version="0.1.1",
     url="https://github.com/piqueen314/ipython-IDV.git",
 
     author="Drilsdown team",
