@@ -1,4 +1,4 @@
-#
+
 # Copy this into
 # ~/.ipython/extensions/
 # In the ipython shell do:
@@ -33,7 +33,8 @@ from ipywidgets import *
 import ipywidgets as widgets
 from zipfile import *
 import requests
-import xml.etree.ElementTree
+import xml.etree.ElementTree as ET
+from xml.etree.ElementTree import ParseError
 from glob import glob
 from os import listdir
 from os.path import isfile, join
@@ -48,16 +49,26 @@ except ImportError:
     from urlparse import urljoin
     from urlparse import urlparse
     from urllib import urlopen, urlencode
+import requests
+
 
 idv_debug = 0
 
 
 def read_url(url):
     """Utility to read a URL. Returns the text of the result"""
+##First try this with verify=True (the default)
+##If it fails then try it with verify=False
+##We do this so we don't get a warning with https urls that have normal signed certificates but
+##we can still handle https from servers with self signed certs
     try:
-        return urlopen(url).read().decode("utf-8")
+        return requests.get(url).text
     except:
-        print("Error reading url:" + url)
+        try:
+            return requests.get(url, verify=False).text
+        except Exception as some_exception:
+            print("Error reading url:" + url)
+            print("Exception:" + repr(some_exception));
 
 
 def test_it(line, cell=None):
@@ -83,7 +94,7 @@ def idv_help(line, cell=None):
            + "publish_bundle  <xidv or zidv filename> - write out the bundle and publish it to RAMADDA<br>" \
            + "publish_notebook <notebook file name> - publish the current notebook to RAMADDA via the IDV<br>" \
            + "set_ramadda <ramadda url to a Drilsdown case study><br>" \
-           + "createCaseStudy <case study name><br>" \
+           + "create_case_study <case study name><br>" \
            + "set_bbox &lt;north west south east&gt; No arguments to clear the bbox<br></pre>"
     DrilsdownUI.do_display(HTML(html))
 
@@ -157,7 +168,7 @@ def make_image(line, cell=None):
             print("%make_image <-display displayid> <-caption caption> <-publish>")
             return
         
-    return Idv.make_image(publish, caption, display_id=display_id)
+    return Idv.make_image(publish, caption, display_id=display_id, display=False)
 
 
 def publish_notebook(line, cell=None):
@@ -331,7 +342,7 @@ class DrilsdownUI:
                           DrilsdownUI.make_button("Make Image", DrilsdownUI.make_image_clicked, cbx),
                           DrilsdownUI.make_button("Make Movie", DrilsdownUI.make_movie_clicked, cbx),
                           DrilsdownUI.make_button("Save Bundle", DrilsdownUI.save_bundle_clicked, cbx),
-                          DrilsdownUI.make_button("Publish Notebook", Idv.publish_notebook),
+#                          DrilsdownUI.make_button("Publish Notebook", Idv.publish_notebook),
                           cbx]),
                     HBox([
                           # Label("Outputs append below until Cleared:"),
@@ -395,6 +406,7 @@ class DrilsdownUI:
         extra = ""
         if b.extra.value:
             extra = "-publish"
+        print("%make_image " +  extra);
         image = make_image(extra)
         if image is not None:
             DrilsdownUI.do_display(image)
@@ -402,6 +414,7 @@ class DrilsdownUI:
     @staticmethod
     def make_movie_clicked(b):
         DrilsdownUI.status("")
+        print("%make_movie");
         if b.extra.value:
             movie = Idv.make_movie(True)
         else:
@@ -411,7 +424,9 @@ class DrilsdownUI:
 
     @staticmethod
     def load_bundle_clicked(b):
-        load_bundle(b.entry.get_file_path())
+        url = b.entry.get_file_path();
+        print("%load_bundle " + url);
+        load_bundle(url)
 
     @staticmethod
     def view_url_clicked(b):
@@ -461,6 +476,29 @@ class DrilsdownUI:
         DrilsdownUI.displayedItems = []
         clear_output()
 
+
+class IdvResults:
+    results = "";
+    call_ok = False;
+    def __init__(self, ok = False, results=""):
+        self.call_ok = ok;
+        self.results = results;
+
+    def __repr__(self):
+        return self.results;
+
+    def set_ok(self, ok):
+        self.call_ok = ok;
+
+    def ok(self):
+        return self.call_ok;
+
+
+    def set_results(self,results):
+        self.results = results;
+
+    def get_results(self):
+        return self.results;
 
 class Idv:
     bbox = None
@@ -590,23 +628,39 @@ class Idv:
         print('Idv.set_path("/Applications/IDV_5.3u1/runIDV")')
 
     @staticmethod
+    def run_isl(isl):
+        return  Idv.idv_call(Idv.cmd_loadisl, {"isl": isl});
+
+    @staticmethod
     def idv_call(command, args=None):
         """
         Will start up the IDV if needed then call the command
         If args is non-null then this is a map of the url arguments to pass to the IDV
         """
         Idv.run_idv(from_user=False)
-# TODO: add better error handling
+        result = IdvResults(False,"");
         try:
             url = Idv.get_base_url() +command
             if args:
                 url += "?" + urlencode(args)
             if idv_debug:
                 print("Calling " + url)
-            html = urlopen(url).read()
-            return html.decode("utf-8")
-        except:
-            return None
+            xml = urlopen(url).read().decode("utf-8")
+            root = ET.fromstring(xml)
+            result.set_ok(root.attrib['ok'] == 'true')
+            if root.text is not None:
+                result.set_results(root.text)
+            else:
+                result.set_results("")
+#Handle older versions of the IDV
+        except ParseError as pe:
+            result.set_ok(True);
+            result.set_results(xml)
+        except Exception as some_exception:
+            result.set_results( "Error occurred:" + repr(some_exception))
+        if not result.ok():
+            print("An error has occurred:" + result.get_results());
+        return result;
 
     @staticmethod
     def load_data(url, name=None):
@@ -615,7 +669,8 @@ class Idv:
         if name is not None:
             extra1 += ' name="' + name + '" '
         isl = '<isl>\n<datasource url="' + url + '" ' + extra1 + '/>' + extra2 + '\n</isl>'
-        if Idv.idv_call(Idv.cmd_loadisl, {"isl": isl}) is None:
+        result = Idv.run_isl(isl);
+        if not result.ok():
             print("load_data failed")
             return
         print("data loaded")
@@ -657,13 +712,13 @@ class Idv:
             return
         isl = '<isl><publish file="' + file + '"/></isl>'
         DrilsdownUI.status("Make sure you do 'File->Save and Checkpoint'. Check your IDV to publish the file")
-        result = Idv.idv_call(Idv.cmd_loadisl, {"isl": isl})
-        if result is None:
+        result = Idv.run_isl(isl);
+        if not result.ok():
             print("Publication failed")
             return
-        if result.strip()!="":
+        if result.get_results().strip()!="":
             print("Publication successful")
-            print("URL: " + result)
+            print("URL: " + result.get_results())
             return
         print("Publication failed")
 
@@ -688,7 +743,8 @@ class Idv:
         else:
             url = url.replace("&", "&amp;")
         isl = '<isl>\n<loadcatalog url="' + url+'"/></isl>'
-        if Idv.idv_call(Idv.cmd_loadisl, {"isl": isl}) is None:
+        result = Idv.run_isl(isl);
+        if not result.ok():
             print("load_catalog failed")
             return
 
@@ -701,8 +757,8 @@ class Idv:
         if publish:
             extra += ' publish="true" '
         isl = '<isl><save file="' + filename + '"' + extra + '/></isl>'
-        result = Idv.idv_call(Idv.cmd_loadisl, {"isl": isl})
-        if result is None:
+        result = Idv.run_isl(isl);
+        if not result.ok():
             print("save failed")
             return
         if os.path.isfile(filename):
@@ -728,7 +784,8 @@ class Idv:
             extra2 += '<pause/><center north="' + repr(north) + '" west="' + repr(west) + '" south="'\
                       + repr(south) + '" east="' + repr(east) + '" />'
         isl = '<isl>\n<bundle file="' + bundle_url + '" ' + extra1 + '/>' + extra2 + '\n</isl>'
-        if Idv.idv_call(Idv.cmd_loadisl, {"isl": isl}) is None:
+        result = Idv.run_isl(isl);
+        if not result.ok():
             DrilsdownUI.status("Bundle load failed")
             return
         DrilsdownUI.status("Bundle loaded")
@@ -737,13 +794,13 @@ class Idv:
     def publish_bundle(filename):
         extra = " publish=\"true\" "
         isl = '<isl><save file="' + filename + '"' + extra + '/></isl>'
-        result = Idv.idv_call(Idv.cmd_loadisl, {"isl": isl})
-        if result is None:
+        result = Idv.run_isl(isl);
+        if not result.ok():
             print("save failed")
             return
-        if result.strip() != "":
+        if result.get_results().strip() != "":
             print("Publication successful")
-            print("URL: " + result)
+            print("URL: " + result.get_results())
         if os.path.isfile(filename):
             print("bundle saved:" + filename)
             return FileLink(filename)
@@ -798,13 +855,17 @@ class Idv:
         with NamedTemporaryFile(suffix='.gif', delete=False) as f:
             isl = '<isl><' + what + ' combine="true" file="' + f.name + '"' \
                   + extra + '>' + extra2 + '</' + what + '></isl>'
-            result = Idv.idv_call(Idv.cmd_loadisl, {"isl": isl})
+            result = Idv.run_isl(isl)
             f.seek(0)
             if idv_publish:
-                if result is None or result.strip() == "":
+                if not result.ok():
                     DrilsdownUI.status("make " + what + " failed")
                     return
-                print("Publication successful " + "URL: " + result)
+                if result.get_results().strip() != "":
+                    print("Publication successful " + "URL: " + result.get_results())
+                else:
+                    print("Publication failed");
+                    
             if self_publish:
                 ramadda.publish(name, file=f.name, parent=parent)
             data = open(f.name, "rb").read()
@@ -813,8 +874,31 @@ class Idv:
             # img = '<img src="data:image/gif;base64,{0}">'
             if display:
                 DrilsdownUI.status("")
+                DrilsdownUI.do_display(IPython.core.display.Image(data))
+            else:
                 return IPython.core.display.Image(data)
         DrilsdownUI.status("")
+
+
+    @staticmethod
+    def export_data(filename=None, display_id=None, load_data = False):
+        DrilsdownUI.status("Exporting data ...")
+        extra = ""
+        if display_id is not None:
+            extra += ' display="' + display_id + '" '
+        if filename is  None:
+            f = NamedTemporaryFile(suffix='.gif', delete=False) 
+            filename = f.name;
+        isl = '<isl><export file="' + f.name + '"' \
+            + extra + '/></isl>'
+        result = Idv.run_isl(isl)
+        if not result.ok():
+            return;
+        if load_data:
+            placeholder = false;
+            #                return load_data(filename);
+            # img = '<img src="data:image/gif;base64,{0}">'
+        DrilsdownUI.status("data exported to: " + filename)
 
 
 class Repository:
@@ -985,10 +1069,10 @@ class LocalFiles(Repository):
 class TDS(Repository):
     def __init__(self, url,  name=None):
         self.url = url
-        catalog = read_url(url)
         if name is not None:
             self.name = name
         else:
+            catalog = read_url(url)
             root = xml.etree.ElementTree.fromstring(catalog)
             self.name = root.attrib['name']
 
@@ -1338,7 +1422,8 @@ class RamaddaEntry(RepositoryEntry):
         return self.get_repository().base + "/opendap/" + self.id + "/entry.das"
 
     def make_get_file_url(self):
-        return self.get_repository().base + "/entry/get?entryid=" + self.id
+        return self.url
+#        return self.get_repository().base + "/entry/get?entryid=" + self.id
 
     def add_display_widget(self, row):
         b = DrilsdownUI.make_button("Set URL", DrilsdownUI.set_url_clicked)
@@ -1357,9 +1442,9 @@ repositories = [Ramadda("http://weather.rsmas.miami.edu/repository/entry/show?en
                         "NOAA-ESRL-PSD Climate Data Repository"),
                 # Ramadda("http://ramadda.atmos.albany.edu:8080/repository?entryid=643aa629-c53d-48cb-8454-572fad73cb0f",
                 #         "University of Albany RAMADDA"),
-                TDS("http://thredds.ucar.edu/thredds/catalog.xml",
+                TDS("https://thredds.ucar.edu/thredds/catalog.xml",
                     "Unidata THREDDS Data Server"),
-                Ramadda("http://motherlode.ucar.edu/repository/entry/show?entryid=0",
+                Ramadda("https://motherlode.ucar.edu/repository/entry/show?entryid=0",
                         "Unidata RAMADDA Server"),
                 TDS("http://weather.rsmas.miami.edu/thredds/catalog.xml",
                     "University of Miami THREDDS Data Server"),
