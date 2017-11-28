@@ -9,9 +9,9 @@ with open(path.join(here, 'README.md'), encoding='utf-8') as f:
     long_description = f.read()
 
 setuptools.setup(
-    name="ipython-IDV",
-    version="0.1.6",
-    url="https://github.com/piqueen314/ipython-IDV.git",
+    name="drilsdown",
+    version="0.1.7",
+    url="https://github.com/piqueen314/drilsdown.git",
 
     author="Drilsdown team",
     author_email="cecehedrick@gmail.com",
@@ -19,11 +19,8 @@ setuptools.setup(
     description="This project allows users to use Unidata's IDV with jupyter notebooks ",
     long_description=open('README.md').read(),
 
-    packages=setuptools.find_packages(),
+    packages=['drilsdown'],
 
-    py_modules=(
-        'ipython-IDV.drilsdown',
-    ),
 
     install_requires=(
         'ipython'
@@ -40,12 +37,12 @@ setuptools.setup(
         'Programming Language :: Python :: 3.6',
     ],
     package_data={
-        'ipython-IDV': [
+        'drilsdown': [
             'drilsdownplugin.jar',
             'ramaddaplugin.jar',
 
         ],
     },
-    package_dir={'ipython-IDV': 'ipython-IDV'},
+    package_dir={'drilsdown': 'drilsdown'},
     include_package_data=True,
 )
