@@ -10,7 +10,7 @@ with open(path.join(here, 'README.md'), encoding='utf-8') as f:
 
 setuptools.setup(
     name="ipython-IDV",
-    version="0.1.1",
+    version="0.1.4",
     url="https://github.com/piqueen314/ipython-IDV.git",
 
     author="Drilsdown team",
@@ -21,7 +21,13 @@ setuptools.setup(
 
     packages=setuptools.find_packages(),
 
-    install_requires=[],
+    py_modules=(
+        'drilsdown',
+    ),
+
+    install_requires=(
+        'ipython'
+    ),
 
     classifiers=[
         'Development Status :: 2 - Pre-Alpha',
@@ -33,4 +39,13 @@ setuptools.setup(
         'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
     ],
+    package_data={
+        'ipython-IDV': [
+            'drilsdownplugin.jar',
+            'ramaddaplugin.jar',
+
+        ],
+    },
+    package_dir={'ipython-IDV': 'ipython-IDV'},
+    include_package_data=True,
 )
