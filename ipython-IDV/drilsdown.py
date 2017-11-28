@@ -17,8 +17,6 @@ import re
 import subprocess
 import json
 from base64 import b64encode
-
-from IPython.core.magic import Magics, magics_class, line_magic
 from IPython.display import HTML
 from IPython.display import Image
 from IPython.display import IFrame
@@ -70,354 +68,185 @@ def test_it(line, cell=None):
 # Here are the magic commands
 #
 
-# def idv_help(line, cell=None):
-#     DrilsdownUI.status("")
-#     html = "<pre>idv_help  Show this help message<br>" \
-#            + "run_idv<br>" \
-#            + "make_ui<br>" \
-#            + "load_bundle <bundle url or file path><br>" \
-#            + "           If no bundle given and if set_ramadda has been called the bundle will be fetched from RAMADDA<br>" \
-#            + "load_bundle_make_image <bundle url or file path><br>" \
-#            + "load_catalog Load the case study catalog into the IDV<br>" \
-#            + "make_image <-publish> <-caption ImageName> Capture an IDV image and optionally publish it to RAMADDA<br>" \
-#            + "make_movie <-publish> <-caption MovieName> Capture an IDV movie and optionally publish it to RAMADDA<br>" \
-#            + "save_bundle <xidv or zidv filename> <-publish> - write out the bundle and optionally publish to RAMADDA<br>" \
-#            + "publish_bundle  <xidv or zidv filename> - write out the bundle and publish it to RAMADDA<br>" \
-#            + "publish_notebook <notebook file name> - publish the current notebook to RAMADDA via the IDV<br>" \
-#            + "set_ramadda <ramadda url to a Drilsdown case study><br>" \
-#            + "createCaseStudy <case study name><br>" \
-#            + "set_bbox &lt;north west south east&gt; No arguments to clear the bbox<br></pre>"
-#     DrilsdownUI.do_display(HTML(html))
-#
-#
-# def run_idv(line=None, cell=None):
-#     """Magic hook to start the IDV"""
-#     Idv.run_idv(from_user=True)
-#
-#
-# def load_catalog(line, cell=None):
-#     Idv.load_catalog(line)
-#
-#
-# def load_bundle_make_image(line, cell=None):
-#     load_bundle(line, cell)
-#     return make_image(line, cell)
-#
-#
-# def create_case_study(line, cell=None):
-#     url = Repository.theRepository.make_url("/entry/form?parentof="
-#                                             + Repository.theRepository.entryId
-#                                             + "&type=type_drilsdown_casestudy&name=" + line)
-#     url = url.replace(" ", "%20")
-#     print("Go to this link to create the Case Study:")
-#     print(url)
-#     print("Then call %set_ramadda with the new Case Study URL")
-#
-#
-# def load_data(line, cell=None, name=None):
-#     Idv.load_data(line, name)
-#
-#
-# def load_bundle(line, cell=None):
-#     if line is None or line == "":
-#         if Repository.theRepository is not None:
-#             line = Repository.theRepository.make_url("/drilsdown/getbundle?entryid=" + Repository.theRepository.entryId)
-#
-#     if line is None or line == "":
-#         print("No bundle argument provided")
-#         return
-#
-#     Idv.load_bundle(line)
-#
-#
-# def make_image(line, cell=None):
-#     toks = line.split(" ")
-#     skip = 0
-#     publish = False
-#     caption = None
-#     display_id = None
-#     for i in range(len(toks)):
-#         if skip > 0:
-#             skip = skip-1
-#             continue
-#         tok = toks[i].strip()
-#         if tok == "":
-#             continue
-#         if tok == "-publish":
-#             publish = True
-#         elif tok == "-caption":
-#             skip = 1
-#             caption = toks[i+1]
-#         elif tok == "-display":
-#             skip = 1
-#             display_id = toks[i+1]
-#         elif tok == "-help":
-#             print("%make_image <-display displayid> <-caption caption> <-publish>")
-#             return
-#         else:
-#             print("Unknown argument:" + tok)
-#             print("%make_image <-display displayid> <-caption caption> <-publish>")
-#             return
-#
-#     return Idv.make_image(publish, caption, display_id=display_id)
-#
-#
-# def publish_notebook(line, cell=None):
-#     Idv.publish_notebook()
-#
-#
-# def make_movie(line, cell=None):
-#     toks = line.split(" ")
-#     skip = 0
-#     publish = False
-#     display_id = None
-#     for i in range(len(toks)):
-#         if skip > 0:
-#             skip = skip-1
-#             continue
-#         tok = toks[i]
-#         if tok == "-publish":
-#             publish = True
-#         elif tok == "-display":
-#             skip = 1
-#             display_id = toks[i+1]
-#
-#     return Idv.make_movie(publish, display_id=display_id)
-#
-#
-# def set_ramadda(line, cell=None):
-#     """Set the ramadda to be used. The arg should be the normal /entry/view URL for a RAMADDA entry"""
-#     line_toks = line.split(" ")
-#     should_list = len(line_toks) == 1
-#     line = line_toks[0]
-#     Repository.set_repository(Ramadda(line), should_list)
-#
-#
-# def list_repository(entry_id=None, repository=None):
-#     """List the entries held by the entry id"""
-#     if repository is None:
-#         repository = Repository.theRepository
-#     repository.list_entry(entry_id)
-#
-#
-# def save_bundle(line, cell=None):
-#     extra = ""
-#     filename = "idv.xidv"
-#     publish = False
-#     toks = line.split(" ")
-#     for i in range(len(toks)):
-#         tok = toks[i]
-#         if tok != "":
-#             if tok == "-publish":
-#                 publish = True
-#             else:
-#                 filename = tok
-#     Idv.save_bundle(filename, publish)
-#
-#
-# def publish_bundle(line, cell=None):
-#     extra = " publish=\"true\" "
-#     filename = "idv.xidv"
-#     if line != "" and line is not None:
-#         filename = line
-#     Idv.publish_bundle(filename)
-#
-#
-# def set_bbox(line, cell=None):
-#     Idv.setBBOX(line)
-#
-#
-# def make_ui(line):
-#     DrilsdownUI.make_ui()
-
-# end of 15 magic line commands
-
-# cece plugin attempt
-@magics_class
-class drilsdown(Magics):
-    @line_magic
-    def idv_help(line, cell=None):
-        DrilsdownUI.status("")
-        html = "<pre>idv_help  Show this help message<br>" \
-               + "run_idv<br>" \
-               + "make_ui<br>" \
-               + "load_bundle <bundle url or file path><br>" \
-               + "           If no bundle given and if set_ramadda has been called the bundle will be fetched from RAMADDA<br>" \
-               + "load_bundle_make_image <bundle url or file path><br>" \
-               + "load_catalog Load the case study catalog into the IDV<br>" \
-               + "make_image <-publish> <-caption ImageName> Capture an IDV image and optionally publish it to RAMADDA<br>" \
-               + "make_movie <-publish> <-caption MovieName> Capture an IDV movie and optionally publish it to RAMADDA<br>" \
-               + "save_bundle <xidv or zidv filename> <-publish> - write out the bundle and optionally publish to RAMADDA<br>" \
-               + "publish_bundle  <xidv or zidv filename> - write out the bundle and publish it to RAMADDA<br>" \
-               + "publish_notebook <notebook file name> - publish the current notebook to RAMADDA via the IDV<br>" \
-               + "set_ramadda <ramadda url to a Drilsdown case study><br>" \
-               + "createCaseStudy <case study name><br>" \
-               + "set_bbox &lt;north west south east&gt; No arguments to clear the bbox<br></pre>"
-        DrilsdownUI.do_display(HTML(html))
-
-    @line_magic
-    def run_idv(line=None, cell=None):
-        """Magic hook to start the IDV"""
-        Idv.run_idv(from_user=True)
-
-    @line_magic
-    def load_catalog(line, cell=None):
-        Idv.load_catalog(line)
+def idv_help(line, cell=None):
+    DrilsdownUI.status("")
+    html = "<pre>idv_help  Show this help message<br>" \
+           + "run_idv<br>" \
+           + "make_ui<br>" \
+           + "load_bundle <bundle url or file path><br>" \
+           + "           If no bundle given and if set_ramadda has been called the bundle will be fetched from RAMADDA<br>" \
+           + "load_bundle_make_image <bundle url or file path><br>" \
+           + "load_catalog Load the case study catalog into the IDV<br>" \
+           + "make_image <-publish> <-caption ImageName> Capture an IDV image and optionally publish it to RAMADDA<br>" \
+           + "make_movie <-publish> <-caption MovieName> Capture an IDV movie and optionally publish it to RAMADDA<br>" \
+           + "save_bundle <xidv or zidv filename> <-publish> - write out the bundle and optionally publish to RAMADDA<br>" \
+           + "publish_bundle  <xidv or zidv filename> - write out the bundle and publish it to RAMADDA<br>" \
+           + "publish_notebook <notebook file name> - publish the current notebook to RAMADDA via the IDV<br>" \
+           + "set_ramadda <ramadda url to a Drilsdown case study><br>" \
+           + "createCaseStudy <case study name><br>" \
+           + "set_bbox &lt;north west south east&gt; No arguments to clear the bbox<br></pre>"
+    DrilsdownUI.do_display(HTML(html))
 
 
-    def load_bundle_make_image(line, cell=None):
+def run_idv(line=None, cell=None):
+    """Magic hook to start the IDV"""
+    Idv.run_idv(from_user=True)
 
-        drilsdown.load_bundle(line, cell)
-        return drilsdown.make_image(line, cell)
 
-    @line_magic
-    def create_case_study(line, cell=None):
-        url = Repository.theRepository.make_url("/entry/form?parentof="
-                                                + Repository.theRepository.entryId
-                                                + "&type=type_drilsdown_casestudy&name=" + line)
-        url = url.replace(" ", "%20")
-        print("Go to this link to create the Case Study:")
-        print(url)
-        print("Then call %set_ramadda with the new Case Study URL")
+def load_catalog(line, cell=None):
+    Idv.load_catalog(line)
 
-    def load_data(line, cell=None, name=None):
-        Idv.load_data(line, name)
 
-    @line_magic
-    def load_bundle(line, cell=None):
-        if line is None or line == "":
-            if Repository.theRepository is not None:
-                line = Repository.theRepository.make_url(
-                    "/drilsdown/getbundle?entryid=" + Repository.theRepository.entryId)
+def load_bundle_make_image(line, cell=None):
+    load_bundle(line, cell)
+    return make_image(line, cell)
 
-        if line is None or line == "":
-            print("No bundle argument provided")
+
+def create_case_study(line, cell=None):
+    url = Repository.theRepository.make_url("/entry/form?parentof="
+                                            + Repository.theRepository.entryId
+                                            + "&type=type_drilsdown_casestudy&name=" + line)
+    url = url.replace(" ", "%20")
+    print("Go to this link to create the Case Study:")
+    print(url)
+    print("Then call %set_ramadda with the new Case Study URL")
+
+
+def load_data(line, cell=None, name=None):
+    Idv.load_data(line, name)
+
+
+def load_bundle(line, cell=None):
+    if line is None or line == "":
+        if Repository.theRepository is not None:
+            line = Repository.theRepository.make_url("/drilsdown/getbundle?entryid=" + Repository.theRepository.entryId)
+
+    if line is None or line == "":
+        print("No bundle argument provided")
+        return
+
+    Idv.load_bundle(line)
+
+
+def make_image(line, cell=None):
+    toks = line.split(" ")
+    skip = 0
+    publish = False
+    caption = None
+    display_id = None
+    for i in range(len(toks)):
+        if skip > 0:
+            skip = skip-1
+            continue
+        tok = toks[i].strip()
+        if tok == "":
+            continue
+        if tok == "-publish":
+            publish = True
+        elif tok == "-caption":
+            skip = 1
+            caption = toks[i+1]
+        elif tok == "-display":
+            skip = 1
+            display_id = toks[i+1]
+        elif tok == "-help":
+            print("%make_image <-display displayid> <-caption caption> <-publish>")
+            return
+        else:
+            print("Unknown argument:" + tok)
+            print("%make_image <-display displayid> <-caption caption> <-publish>")
             return
 
-        Idv.load_bundle(line)
+    return Idv.make_image(publish, caption, display_id=display_id)
 
-    @line_magic
-    def make_image(line, cell=None):
-        toks = line.split(" ")
-        skip = 0
-        publish = False
-        caption = None
-        display_id = None
-        for i in range(len(toks)):
-            if skip > 0:
-                skip = skip - 1
-                continue
-            tok = toks[i].strip()
-            if tok == "":
-                continue
+
+def publish_notebook(line, cell=None):
+    Idv.publish_notebook()
+
+
+def make_movie(line, cell=None):
+    toks = line.split(" ")
+    skip = 0
+    publish = False
+    display_id = None
+    for i in range(len(toks)):
+        if skip > 0:
+            skip = skip-1
+            continue
+        tok = toks[i]
+        if tok == "-publish":
+            publish = True
+        elif tok == "-display":
+            skip = 1
+            display_id = toks[i+1]
+
+    return Idv.make_movie(publish, display_id=display_id)
+
+
+def set_ramadda(line, cell=None):
+    """Set the ramadda to be used. The arg should be the normal /entry/view URL for a RAMADDA entry"""
+    line_toks = line.split(" ")
+    should_list = len(line_toks) == 1
+    line = line_toks[0]
+    Repository.set_repository(Ramadda(line), should_list)
+
+
+def list_repository(entry_id=None, repository=None):
+    """List the entries held by the entry id"""
+    if repository is None:
+        repository = Repository.theRepository
+    repository.list_entry(entry_id)
+
+
+def save_bundle(line, cell=None):
+    extra = ""
+    filename = "idv.xidv"
+    publish = False
+    toks = line.split(" ")
+    for i in range(len(toks)):
+        tok = toks[i]
+        if tok != "":
             if tok == "-publish":
                 publish = True
-            elif tok == "-caption":
-                skip = 1
-                caption = toks[i + 1]
-            elif tok == "-display":
-                skip = 1
-                display_id = toks[i + 1]
-            elif tok == "-help":
-                print("%make_image <-display displayid> <-caption caption> <-publish>")
-                return
             else:
-                print("Unknown argument:" + tok)
-                print("%make_image <-display displayid> <-caption caption> <-publish>")
-                return
-
-        return Idv.make_image(publish, caption, display_id=display_id)
-
-    @line_magic
-    def publish_notebook(line, cell=None):
-        Idv.publish_notebook()
-
-    @line_magic
-    def make_movie(line, cell=None):
-        toks = line.split(" ")
-        skip = 0
-        publish = False
-        display_id = None
-        for i in range(len(toks)):
-            if skip > 0:
-                skip = skip - 1
-                continue
-            tok = toks[i]
-            if tok == "-publish":
-                publish = True
-            elif tok == "-display":
-                skip = 1
-                display_id = toks[i + 1]
-
-        return Idv.make_movie(publish, display_id=display_id)
-
-    @line_magic
-    def set_ramadda(line, cell=None):
-        """Set the ramadda to be used. The arg should be the normal /entry/view URL for a RAMADDA entry"""
-        line_toks = line.split(" ")
-        should_list = len(line_toks) == 1
-        line = line_toks[0]
-        Repository.set_repository(Ramadda(line), should_list)
-
-    def list_repository(entry_id=None, repository=None):
-        """List the entries held by the entry id"""
-        if repository is None:
-            repository = Repository.theRepository
-        repository.list_entry(entry_id)
-
-    @line_magic
-    def save_bundle(line, cell=None):
-        extra = ""
-        filename = "idv.xidv"
-        publish = False
-        toks = line.split(" ")
-        for i in range(len(toks)):
-            tok = toks[i]
-            if tok != "":
-                if tok == "-publish":
-                    publish = True
-                else:
-                    filename = tok
-        Idv.save_bundle(filename, publish)
-
-    @line_magic
-    def publish_bundle(line, cell=None):
-        extra = " publish=\"true\" "
-        filename = "idv.xidv"
-        if line != "" and line is not None:
-            filename = line
-        Idv.publish_bundle(filename)
-
-    @line_magic
-    def set_bbox(line, cell=None):
-        Idv.setBBOX(line)
-
-    @line_magic
-    def make_ui(line):
-        DrilsdownUI.make_ui()
+                filename = tok
+    Idv.save_bundle(filename, publish)
 
 
-def load_ipython_extension(ipython):
+def publish_bundle(line, cell=None):
+    extra = " publish=\"true\" "
+    filename = "idv.xidv"
+    if line != "" and line is not None:
+        filename = line
+    Idv.publish_bundle(filename)
+
+
+def set_bbox(line, cell=None):
+    Idv.setBBOX(line)
+
+
+def make_ui(line):
+    DrilsdownUI.make_ui()
+
+
+def load_ipython_extension(shell):
     """Define the magics"""
-    # magic_type = "line"
-    # shell.register_magic_function(test_it, magic_type)
-    # shell.register_magic_function(idv_help, magic_type)
-    # shell.register_magic_function(run_idv, magic_type)
-    # shell.register_magic_function(make_ui, magic_type)
-    # shell.register_magic_function(load_bundle, magic_type)
-    # shell.register_magic_function(load_bundle_make_image, magic_type)
-    # shell.register_magic_function(load_catalog, magic_type)
-    # shell.register_magic_function(make_image, magic_type)
-    # shell.register_magic_function(make_movie, magic_type)
-    # shell.register_magic_function(set_ramadda, magic_type)
-    # shell.register_magic_function(create_case_study, magic_type)
-    # shell.register_magic_function(set_bbox, magic_type)
-    # shell.register_magic_function(save_bundle, magic_type)
-    # shell.register_magic_function(publish_bundle, magic_type)
-    # shell.register_magic_function(publish_notebook, magic_type)
-
-    ipython.register_magics(drilsdown)
-
+    magic_type = "line"
+    shell.register_magic_function(test_it, magic_type)
+    shell.register_magic_function(idv_help, magic_type)
+    shell.register_magic_function(run_idv, magic_type)
+    shell.register_magic_function(make_ui, magic_type)
+    shell.register_magic_function(load_bundle, magic_type)
+    shell.register_magic_function(load_bundle_make_image, magic_type)
+    shell.register_magic_function(load_catalog, magic_type)
+    shell.register_magic_function(make_image, magic_type)
+    shell.register_magic_function(make_movie, magic_type)
+    shell.register_magic_function(set_ramadda, magic_type)
+    shell.register_magic_function(create_case_study, magic_type)
+    shell.register_magic_function(set_bbox, magic_type)
+    shell.register_magic_function(save_bundle, magic_type)
+    shell.register_magic_function(publish_bundle, magic_type)
+    shell.register_magic_function(publish_notebook, magic_type)
 
 
 class DrilsdownUI:

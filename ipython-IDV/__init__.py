@@ -1,6 +1,6 @@
 """ipython-IDV - This project allows users to use Unidata's IDV with jupyter notebooks """
 import os.path
-__version__ = '0.1.5'
+__version__ = '0.1.6'
 __author__ = 'Cece Hedrick <cecehedrick@gmail.com>'
 __all__ = []
 
