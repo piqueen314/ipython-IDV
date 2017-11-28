@@ -9,7 +9,7 @@ with open(path.join(here, 'README.md'), encoding='utf-8') as f:
     long_description = f.read()
 
 setuptools.setup(
-    name="drilsdown",
+    name="ipython-IDV",
     version="0.1.7",
     url="https://github.com/piqueen314/drilsdown.git",
 
