@@ -10,7 +10,7 @@ with open(path.join(here, 'README.md'), encoding='utf-8') as f:
 
 setuptools.setup(
     name="ipython-IDV",
-    version="0.1.7",
+    version="0.1.8",
     url="https://github.com/piqueen314/drilsdown.git",
 
     author="Drilsdown team",
@@ -20,11 +20,8 @@ setuptools.setup(
     long_description=open('README.md').read(),
 
     packages=['drilsdown'],
-
-
-    install_requires=(
-        'ipython'
-    ),
+    py_modules = ['drilsdown'],
+    install_requires=['ipython'],
 
     classifiers=[
         'Development Status :: 2 - Pre-Alpha',
