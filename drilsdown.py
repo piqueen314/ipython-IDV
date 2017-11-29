@@ -40,7 +40,7 @@ from os import listdir
 from os.path import isfile, join
 import IPython 
 from IPython.lib import kernel
-
+import shlex
 
 try:
     from urllib.request import urlopen
@@ -140,7 +140,9 @@ def load_bundle(line, cell=None):
 
 
 def make_image(line, cell=None):
-    toks = line.split(" ")
+    
+#    toks = line.split(" ")
+    toks = shlex.split(line);
     skip = 0
     publish = False
     caption = None
@@ -176,10 +178,11 @@ def publish_notebook(line, cell=None):
 
 
 def make_movie(line, cell=None):
-    toks = line.split(" ")
+    toks = shlex.split(line)
     skip = 0
     publish = False
     display_id = None
+    caption = None
     for i in range(len(toks)):
         if skip > 0:
             skip = skip-1
@@ -187,11 +190,14 @@ def make_movie(line, cell=None):
         tok = toks[i]
         if tok == "-publish":
             publish = True
+        elif tok == "-caption":
+            skip = 1
+            caption = toks[i+1]
         elif tok == "-display":
             skip = 1
             display_id = toks[i+1]
 
-    return Idv.make_movie(publish, display_id=display_id)
+    return Idv.make_movie(publish, caption, display_id=display_id)
 
 
 def set_ramadda(line, cell=None):
@@ -850,6 +856,7 @@ class Idv:
         if name is None:
             name = caption
 
+#        extra += " what=\"window\" "
         if display_id is not None:
             extra += ' display="' + display_id + '" '
         with NamedTemporaryFile(suffix='.gif', delete=False) as f:
