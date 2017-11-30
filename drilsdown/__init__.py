@@ -1,15 +1,6 @@
 """ipython-IDV - This project allows users to use Unidata's IDV with jupyter notebooks """
 import os.path
 from .drilsdown import load_ipython_extension
-__version__ = '0.2.0'
+__version__ = '0.2.1'
 __author__ = 'Cece Hedrick <cecehedrick@gmail.com>'
 __all__ = []
-
-
-# def _jupyter_nbextension_paths():
-#     return [dict(
-#         section='notebook',
-#         src=os.path.curdir,
-#         dest='drilsdown'
-#
-#     )]
