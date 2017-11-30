@@ -4,9 +4,10 @@ python:
 -   '3.4'
 -   '3.5'
 -   '3.6'
+before_install:
+- travis_retry pip install ipython
 install:
 - travis_retry pip install --upgrade pip
 - travis_retry pip install tox
-- travis_retry pip install ipython
 script:
 -   tox -e $(echo py$TRAVIS_PYTHON_VERSION | tr -d .)
