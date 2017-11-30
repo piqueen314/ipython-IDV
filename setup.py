@@ -21,6 +21,7 @@ setuptools.setup(
     long_description=open('README.md').read(),
 
     #packages=['drilsdown'],
+    packages = setuptools.find_packages(),
     py_modules = ['drilsdown'],
     install_requires=['ipython'],
 
@@ -41,6 +42,6 @@ setuptools.setup(
 
         ],
     },
-    package_dir={'drilsdown': 'drilsdown'},
+    package_dir={"": 'drilsdown'},
     include_package_data=True,
 )
