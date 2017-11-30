@@ -13,18 +13,13 @@ setuptools.setup(
     name="ipython-IDV",
     version=__version__,
     url="https://github.com/piqueen314/drilsdown.git",
-
     author="Drilsdown team",
     author_email="cecehedrick@gmail.com",
-
     description="This project allows users to use Unidata's IDV with jupyter notebooks ",
     long_description=open('README.md').read(),
-
-    #packages=['drilsdown'],
     packages = setuptools.find_packages(),
     py_modules = ['drilsdown'],
     install_requires=['ipython'],
-
     classifiers=[
         'Development Status :: 2 - Pre-Alpha',
         'Programming Language :: Python',
@@ -42,6 +37,6 @@ setuptools.setup(
 
         ],
     },
-    package_dir={"": 'drilsdown'},
+    package_dir={"ipython-IDV": 'drilsdown'},
     include_package_data=True,
 )
