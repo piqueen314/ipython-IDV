@@ -22,6 +22,8 @@ from IPython.display import Image
 from IPython.display import IFrame
 from IPython.display import display
 from IPython.display import Javascript
+from IPython.display import DisplayObject
+from IPython.display import TextDisplayObject
 from IPython.display import clear_output
 import tempfile
 from tempfile import NamedTemporaryFile
@@ -88,8 +90,8 @@ def idv_help(line, cell=None):
            + "           If no bundle given and if set_ramadda has been called the bundle will be fetched from RAMADDA<br>" \
            + "load_bundle_make_image <bundle url or file path><br>" \
            + "load_catalog Load the case study catalog into the IDV<br>" \
-           + "make_image <-publish> <-caption ImageName> Capture an IDV image and optionally publish it to RAMADDA<br>" \
-           + "make_movie <-publish> <-caption MovieName> Capture an IDV movie and optionally publish it to RAMADDA<br>" \
+           + "make_image <-publish> <-caption ImageName> <-capture (legend|window)> Capture an IDV image and optionally publish it to RAMADDA<br>" \
+           + "make_movie <-publish> <-caption MovieName>  <-capture (legend|window)>  Capture an IDV movie and optionally publish it to RAMADDA<br>" \
            + "save_bundle <xidv or zidv filename> <-publish> - write out the bundle and optionally publish to RAMADDA<br>" \
            + "publish_bundle  <xidv or zidv filename> - write out the bundle and publish it to RAMADDA<br>" \
            + "publish_notebook <notebook file name> - publish the current notebook to RAMADDA via the IDV<br>" \
@@ -147,6 +149,7 @@ def make_image(line, cell=None):
     publish = False
     caption = None
     display_id = None
+    cptr = None;
     for i in range(len(toks)):
         if skip > 0:
             skip = skip-1
@@ -159,6 +162,9 @@ def make_image(line, cell=None):
         elif tok == "-caption":
             skip = 1
             caption = toks[i+1]
+        elif tok == "-capture":
+            skip = 1
+            cptr = toks[i+1]
         elif tok == "-display":
             skip = 1
             display_id = toks[i+1]
@@ -170,7 +176,7 @@ def make_image(line, cell=None):
             print("%make_image <-display displayid> <-caption caption> <-publish>")
             return
         
-    return Idv.make_image(publish, caption, display_id=display_id, display=False)
+    DrilsdownUI.do_display(Idv.make_image(publish, caption, display_id=display_id, display=False, capture=cptr))
 
 
 def publish_notebook(line, cell=None):
@@ -183,6 +189,7 @@ def make_movie(line, cell=None):
     publish = False
     display_id = None
     caption = None
+    cptr = None;
     for i in range(len(toks)):
         if skip > 0:
             skip = skip-1
@@ -193,11 +200,14 @@ def make_movie(line, cell=None):
         elif tok == "-caption":
             skip = 1
             caption = toks[i+1]
+        elif tok == "-capture":
+            skip = 1
+            cptr = toks[i+1]
         elif tok == "-display":
             skip = 1
             display_id = toks[i+1]
 
-    return Idv.make_movie(publish, caption, display_id=display_id)
+    return Idv.make_movie(publish, caption, display_id=display_id, capture=cptr)
 
 
 def set_ramadda(line, cell=None):
@@ -219,7 +229,7 @@ def save_bundle(line, cell=None):
     extra = ""
     filename = "idv.xidv"
     publish = False
-    toks = line.split(" ")
+    toks = shlex.split(line)
     for i in range(len(toks)):
         tok = toks[i]
         if tok != "":
@@ -759,9 +769,13 @@ class Idv:
     @staticmethod
     def save_bundle(filename, publish=False):
         extra = ""
-        filename = "idv.xidv"
+        if filename is None:
+            filename = "idv.xidv"
         if publish:
             extra += ' publish="true" '
+            
+        if not os.path.isabs(filename):
+            filename =  os.path.join(os.getcwd() ,filename);
         isl = '<isl><save file="' + filename + '"' + extra + '/></isl>'
         result = Idv.run_isl(isl);
         if not result.ok():
@@ -769,7 +783,8 @@ class Idv:
             return
         if os.path.isfile(filename):
             DrilsdownUI.status("Bundle saved:" + filename)
-            return FileLink(filename)
+            DrilsdownUI.do_display(FileLink(filename))
+            return;
         DrilsdownUI.status("Bundle not saved")
 
     @staticmethod
@@ -813,15 +828,15 @@ class Idv:
         print("Publication failed")
 
     @staticmethod
-    def make_movie(publish=False, caption=None, display=True, display_id=None):
-        return Idv.make_imageOrMovie(False, publish, caption, display, display_id)
+    def make_movie(publish=False, caption=None, display=True, display_id=None, capture=None):
+        return Idv.make_imageOrMovie(False, publish, caption, display, display_id, capture)
 
     @staticmethod
-    def make_image(publish=False, caption=None, display=True, display_id=None):
-        return Idv.make_imageOrMovie(True, publish, caption, display, display_id)
+    def make_image(publish=False, caption=None, display=True, display_id=None, capture=None):
+        return Idv.make_imageOrMovie(True, publish, caption, display, display_id, capture)
 
     @staticmethod
-    def make_imageOrMovie(image, publish=False, caption=None, display=True, display_id=None):
+    def make_imageOrMovie(image, publish=False, caption=None, display=True, display_id=None, capture=None):
         what = "movie"
         if image:
             what = "image"
@@ -829,10 +844,16 @@ class Idv:
         self_publish = False
         idv_publish = False
         parent = None
+        isl = '<isl>'
         extra = ""
         extra2 = ""
         name = None
         ramadda = Repository.theRepository
+        if capture is not None:
+            extra += " capture=\"" + capture +"\" "
+            isl += '<beep/>\n';
+            isl += '<ask message="Click to continue" property="tmp"/>\n';
+            DrilsdownUI.status("Click in the IDV to capture image");
         if type(publish) is bool:
             if publish:
                 idv_publish = True
@@ -856,11 +877,11 @@ class Idv:
         if name is None:
             name = caption
 
-#        extra += " what=\"window\" "
+
         if display_id is not None:
             extra += ' display="' + display_id + '" '
         with NamedTemporaryFile(suffix='.gif', delete=False) as f:
-            isl = '<isl><' + what + ' combine="true" file="' + f.name + '"' \
+            isl += '<' + what + '  file="' + f.name + '"' \
                   + extra + '>' + extra2 + '</' + what + '></isl>'
             result = Idv.run_isl(isl)
             f.seek(0)
