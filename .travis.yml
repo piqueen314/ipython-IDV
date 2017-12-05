@@ -4,6 +4,11 @@ python:
 -   '3.4'
 -   '3.5'
 -   '3.6'
+before_install:
+- travis_retry pip install --upgrade pip
+- travis_retry pip install ipython
+- travis_retry pip install ipywidgets
+- travis_retry pip install requests
 install:
 - travis_retry pip install --upgrade pip
 - travis_retry pip install tox
