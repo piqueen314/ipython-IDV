@@ -881,7 +881,7 @@ class Idv:
         if display_id is not None:
             extra += ' display="' + display_id + '" '
         with NamedTemporaryFile(suffix='.gif', delete=False) as f:
-            isl += '<' + what + ' combine="true" file="' + f.name + '"' \
+            isl += '<' + what + '  file="' + f.name + '"' \
                   + extra + '>' + extra2 + '</' + what + '></isl>'
             result = Idv.run_isl(isl)
             f.seek(0)
