@@ -92,7 +92,7 @@ def idv_help(line, cell=None):
            + "load_catalog Load the case study catalog into the IDV<br>" \
            + "make_image <-publish> <-caption ImageName> <-capture (legend|window)> Capture an IDV image and optionally publish it to RAMADDA<br>" \
            + "make_movie <-publish> <-caption MovieName>  <-capture (legend|window)>  Capture an IDV movie and optionally publish it to RAMADDA<br>" \
-           + "save_bundle <xidv or zidv filename> <-publish> - write out the bundle and optionally publish to RAMADDA<br>" \
+           + "save_bundle <xidv or zidv filename> <-publish> <-embed> - write out the bundle and optionally publish to RAMADDA. If embed then embed the bundle xml into the notebook as a link<br>" \
            + "publish_bundle  <xidv or zidv filename> - write out the bundle and publish it to RAMADDA<br>" \
            + "publish_notebook <notebook file name> - publish the current notebook to RAMADDA via the IDV<br>" \
            + "set_ramadda <ramadda url to a Drilsdown case study><br>" \
@@ -229,15 +229,18 @@ def save_bundle(line, cell=None):
     extra = ""
     filename = "idv.xidv"
     publish = False
+    embed = False;
     toks = shlex.split(line)
     for i in range(len(toks)):
         tok = toks[i]
         if tok != "":
             if tok == "-publish":
                 publish = True
+            elif tok == "-embed":
+                embed = True
             else:
                 filename = tok
-    Idv.save_bundle(filename, publish)
+    Idv.save_bundle(filename, publish, embed=embed)
 
 
 def publish_bundle(line, cell=None):
@@ -767,7 +770,7 @@ class Idv:
         print("Catalog loaded")
 
     @staticmethod
-    def save_bundle(filename, publish=False):
+    def save_bundle(filename, publish=False, embed = False):
         extra = ""
         if filename is None:
             filename = "idv.xidv"
@@ -783,7 +786,14 @@ class Idv:
             return
         if os.path.isfile(filename):
             DrilsdownUI.status("Bundle saved:" + filename)
-            DrilsdownUI.do_display(FileLink(filename))
+            if embed:
+                bundle = open(filename, "rb").read()
+                bundle = b64encode(bundle).decode('ascii')
+                name = os.path.basename(filename);
+                html = '<a target=_bundle download="' + name +'" href="data:text/xidv;name=' + name +';base64,' + bundle +'">' + name +'</a>';
+                DrilsdownUI.do_display(HTML(html))
+            else:
+                DrilsdownUI.do_display(FileLink(filename))
             return;
         DrilsdownUI.status("Bundle not saved")
 
@@ -851,9 +861,6 @@ class Idv:
         ramadda = Repository.theRepository
         if capture is not None:
             extra += " capture=\"" + capture +"\" "
-            isl += '<beep/>\n';
-            isl += '<ask message="Click to continue" property="tmp"/>\n';
-            DrilsdownUI.status("Click in the IDV to capture image");
         if type(publish) is bool:
             if publish:
                 idv_publish = True
