@@ -1108,7 +1108,7 @@ class TDS(Repository):
             self.name = name
         else:
             catalog = read_url(url)
-            root = xml.etree.ElementTree.fromstring(catalog)
+            root = ET.fromstring(catalog)
             self.name = root.attrib['name']
 
     def list_entry(self, entry_id):
@@ -1130,7 +1130,7 @@ class TDS(Repository):
         if url is None:
             url = self.url
         catalog = read_url(url)
-        root = xml.etree.ElementTree.fromstring(catalog)
+        root = ET.fromstring(catalog)
         entries = []
         for child in root:
             # print("child:" + child.tag)
@@ -1326,7 +1326,7 @@ class Ramadda(Repository):
             url = self.make_url("/entry/xmlcreate")
             r = requests.post(url, files=files,
                               data={'group': parent, 'auth.user': user, 'auth.password': password, 'response': 'xml'})
-            root = xml.etree.ElementTree.fromstring(r.text)
+            root = ET.fromstring(r.text)
             if root.attrib['code'] == 'ok':
                 for child in root:
                     display(HTML("Published file: " + self.make_entry_href(child.attrib['id'], name)))
