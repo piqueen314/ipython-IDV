@@ -1,0 +1,6 @@
+This directory is for the output of the documentation build
+
+To build the site:
+1. cd into docs directory
+2. type make html from your terminal
+3. type make clean to undo the documentation site build
