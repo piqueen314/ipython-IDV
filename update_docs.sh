@@ -28,5 +28,5 @@ if [ $current_branch = "gh-pages" ]; then
     git checkout master
     else
     echo "Did not successfully checkout gh-pages branch."
-    echo "Do you have uncommitted changes on your current branch? "
+    echo "Do you have uncommitted changes on your current branch?"
 fi
