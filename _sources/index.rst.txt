@@ -10,6 +10,7 @@
 
    installguide
    devguide
+   examplepage
 
 
 
