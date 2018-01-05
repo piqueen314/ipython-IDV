@@ -10,8 +10,6 @@
 
    installguide
    devguide
-   examplepage
-
 
 
 DRILSDOWN Project
