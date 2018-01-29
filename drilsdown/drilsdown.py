@@ -90,7 +90,7 @@ def idv_help(line, cell=None):
            + "load_bundle_make_image <bundle url or file path><br>" \
            + "load_catalog Load the case study catalog into the IDV<br>" \
            + "make_image <-publish> <-caption ImageName> <-capture (legend|window)> Capture an IDV image and optionally publish it to RAMADDA<br>" \
-           + "make_movie <-publish> <-caption MovieName>  <-capture (legend|window)>  Capture an IDV movie and optionally publish it to RAMADDA<br>" \
+           + "make_movie <-publish> <-caption MovieName>  <-capture (legend|window)> <-quality 0.1-1.0 set the resolution of the images. 1.0= full resolution> Capture an IDV movie and optionally publish it to RAMADDA<br>" \
            + "save_bundle <xidv or zidv filename> <-publish> <-embed> - write out the bundle and optionally publish to RAMADDA. If embed then embed the bundle xml into the notebook as a link<br>" \
            + "publish_bundle  <xidv or zidv filename> - write out the bundle and publish it to RAMADDA<br>" \
            + "publish_notebook <notebook file name> - publish the current notebook to RAMADDA via the IDV<br>" \
@@ -189,6 +189,7 @@ def make_movie(line, cell=None):
     display_id = None
     caption = None
     cptr = None;
+    quality = None;
     for i in range(len(toks)):
         if skip > 0:
             skip = skip-1
@@ -199,6 +200,9 @@ def make_movie(line, cell=None):
         elif tok == "-caption":
             skip = 1
             caption = toks[i+1]
+        elif tok == "-quality":
+            skip = 1
+            quality = toks[i+1]
         elif tok == "-capture":
             skip = 1
             cptr = toks[i+1]
@@ -206,7 +210,7 @@ def make_movie(line, cell=None):
             skip = 1
             display_id = toks[i+1]
 
-    return Idv.make_movie(publish, caption, display_id=display_id, capture=cptr)
+    return Idv.make_movie(publish, caption, display_id=display_id, capture=cptr, quality=quality)
 
 
 def set_ramadda(line, cell=None):
@@ -856,15 +860,15 @@ class Idv:
         print("Publication failed")
 
     @staticmethod
-    def make_movie(publish=False, caption=None, display=True, display_id=None, capture=None):
-        return Idv.make_imageOrMovie(False, publish, caption, display, display_id, capture)
+    def make_movie(publish=False, caption=None, display=True, display_id=None, capture=None, quality=None):
+        return Idv.make_imageOrMovie(False, publish, caption, display, display_id, capture, quality)
 
     @staticmethod
     def make_image(publish=False, caption=None, display=True, display_id=None, capture=None):
         return Idv.make_imageOrMovie(True, publish, caption, display, display_id, capture)
 
     @staticmethod
-    def make_imageOrMovie(image, publish=False, caption=None, display=True, display_id=None, capture=None):
+    def make_imageOrMovie(image, publish=False, caption=None, display=True, display_id=None, capture=None, quality=None):
         what = "movie"
         if image:
             what = "image"
@@ -905,6 +909,10 @@ class Idv:
 
         if display_id is not None:
             extra += ' display="' + display_id + '" '
+
+        if quality is not None:
+            extra += ' quality="' + quality +'" '
+            
         with NamedTemporaryFile(suffix='.gif', delete=False) as f:
             isl += '<' + what + '  file="' + f.name + '"' \
                   + extra + '>' + extra2 + '</' + what + '></isl>'
