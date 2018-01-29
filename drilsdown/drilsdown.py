@@ -54,7 +54,6 @@ except ImportError:
 import requests
 
 
-idv_debug = 0
 
 
 def read_url(url):
@@ -520,6 +519,8 @@ class IdvResults:
         return self.results;
 
 class Idv:
+    debug = False
+    debugBaseUrl = True;
     bbox = None
     data_url = None
     file_url = None
@@ -535,18 +536,30 @@ class Idv:
     base_urls = ["http://127.0.0.1:8788", "http://127.0.0.1:8765"]
 
     @staticmethod
+    def setDebug(debug):
+        Idv.debug = debug
+
+
+    @staticmethod
     def get_base_url():
         if Idv.base_url is not None:
             return Idv.base_url
         # Try the different ports
         for url in Idv.base_urls:
             try:
+                if Idv.debug and Idv.debugBaseUrl:
+                    print("Trying:" + url + Idv.cmd_ping);
                 urlopen(url + Idv.cmd_ping).read()
+                if Idv.debug:
+                    print("IDV base url:" + url)
                 Idv.base_url = url
-                # print("Idv base url:"+ url)
+                Idv.debugBaseUrl = False;
                 return Idv.base_url
             except:
                 dummy = None
+        if Idv.debug:
+            print("Failed to connect to the IDV")
+        Idv.debugBaseUrl = False;
         return None
 
     @staticmethod
@@ -554,8 +567,13 @@ class Idv:
         """This function checks if the IDV is running"""
 # NOTE: Don't call idv_call here because idv_call calls run_idv which calls ping
         try:
-            return urlopen(Idv.get_base_url() + Idv.cmd_ping).read()
-        except:
+
+            base_url=Idv.get_base_url();
+            if base_url is not None:
+                return urlopen(base_url + Idv.cmd_ping).read()
+            return None;
+        except  Exception as some_exception: 
+##            print("err:" + repr(some_exception));
             return None
 
     @staticmethod
@@ -621,7 +639,7 @@ class Idv:
                 print("IDV exectuable does not exist:")
                 print(path)
                 return
-                
+                 
         print("Starting IDV: " + path)
         cwd = os.path.dirname(path)
         subprocess.Popen([path], cwd=cwd)
@@ -662,7 +680,7 @@ class Idv:
             url = Idv.get_base_url() +command
             if args:
                 url += "?" + urlencode(args)
-            if idv_debug:
+            if Idv.debug:
                 print("Calling " + url)
             xml = urlopen(url).read().decode("utf-8")
             root = ET.fromstring(xml)
