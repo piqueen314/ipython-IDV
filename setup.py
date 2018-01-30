@@ -10,11 +10,11 @@ with open(path.join(here, 'README.md'), encoding='utf-8') as f:
     long_description = f.read()
 
 setuptools.setup(
-    name="ipython-IDV",
+    name="drilsdown",
     version=__version__,
-    url="https://github.com/piqueen314/drilsdown.git",
+    url="https://github.com/Unidata/ipython-IDV.git",
     author="Drilsdown team",
-    author_email="cecehedrick@gmail.com",
+    author_email="drilsdown@unidata.ucar.edu",
     description="This project allows users to use Unidata's IDV with jupyter notebooks ",
     long_description=open('README.md').read(),
     packages = setuptools.find_packages(),
