@@ -1503,7 +1503,7 @@ repositories = [Ramadda("http://weather.rsmas.miami.edu/repository/entry/show?en
                         "NOAA-ESRL-PSD Climate Data Repository"),
                 # Ramadda("http://ramadda.atmos.albany.edu:8080/repository?entryid=643aa629-c53d-48cb-8454-572fad73cb0f",
                 #         "University of Albany RAMADDA"),
-                TDS("https://thredds.ucar.edu/thredds/catalog.xml",
+                TDS("http://thredds.ucar.edu/thredds/catalog.xml",
                     "Unidata THREDDS Data Server"),
                 Ramadda("https://motherlode.ucar.edu/repository/entry/show?entryid=0",
                         "Unidata RAMADDA Server"),
