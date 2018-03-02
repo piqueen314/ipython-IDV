@@ -1,7 +1,9 @@
-import setuptools
 from codecs import open
 from os import path
-from drilsdown import __version__
+
+import setuptools
+
+from project_mv.drilsdown import __version__
 
 here = path.abspath(path.dirname(__file__))
 
